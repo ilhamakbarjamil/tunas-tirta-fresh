@@ -42,6 +42,9 @@
             <div class="flex gap-4 items-center">
                 @auth
                     <span>Hi, {{ Auth::user()->name }}</span>
+                    <a href="{{ route('orders.index') }}" class="text-sm text-gray-600 hover:text-green-600 font-bold ml-2 underline">
+                        Riwayat
+                    </a>
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
                         <button class="underline">Logout</button>
