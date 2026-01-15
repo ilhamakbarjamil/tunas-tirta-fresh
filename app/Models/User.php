@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+// Import library Filament
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+// Tambahkan "implements FilamentUser" di sini
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable;
 
@@ -14,8 +18,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
-        'google_id',
+        'role',      // Pastikan kolom ini ada
+        'google_id', // Pastikan kolom ini ada
     ];
 
     protected $hidden = [
@@ -28,9 +32,17 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    // Relasi: User punya banyak Keranjang
+    // Relasi Keranjang
     public function carts()
     {
         return $this->hasMany(Cart::class);
+    }
+
+    // --- LOGIKA KUNCI PINTU ADMIN ---
+    // Fungsi ini wajib ada biar Admin bisa masuk Dashboard Filament
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Kuncinya: Hanya user dengan role 'admin' yang boleh masuk
+        return $this->role === 'admin';
     }
 }

@@ -17,44 +17,49 @@ class GoogleController extends Controller
     }
 
     // 2. Google mengembalikan user ke website kita (Callback)
+    // 2. Google mengembalikan user ke website kita (Callback)
     public function handleGoogleCallback()
     {
         try {
-            // FIX: Tambahkan stateless() agar tidak error 'InvalidState' di localhost
+            // Ambil data dari Google
             $googleUser = Socialite::driver('google')->stateless()->user();
 
-            // Cari user berdasarkan google_id atau email
-            $finduser = User::where('google_id', $googleUser->id)
-                            ->orWhere('email', $googleUser->email)
-                            ->first();
+            // Cari user di database
+            $user = User::where('google_id', $googleUser->id)
+                ->orWhere('email', $googleUser->email)
+                ->first();
 
-            if($finduser){
-                // Jika user sudah ada, langsung login
-                
-                // Update google_id jika belum ada (misal dulunya daftar manual)
-                if(empty($finduser->google_id)){
-                    $finduser->update(['google_id' => $googleUser->id]);
+            if ($user) {
+                // KONDISI 1: User Lama
+                // Update google_id jika belum ada
+                if (empty($user->google_id)) {
+                    $user->update(['google_id' => $googleUser->id]);
                 }
-                
-                Auth::login($finduser);
-                return redirect()->intended('/');
-
             } else {
-                // Jika user belum ada, buat user baru (Register Otomatis)
-                $newUser = User::create([
+                // KONDISI 2: User Baru (Register Otomatis)
+                $user = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
-                    'google_id'=> $googleUser->id,
-                    'password' => bcrypt('123456dummy'), // Password dummy acak
-                    'role' => 'customer', // Default jadi customer
+                    'google_id' => $googleUser->id,
+                    'password' => bcrypt('123456dummy'),
+                    'role' => 'customer', // Default user baru pasti customer
                 ]);
-
-                Auth::login($newUser);
-                return redirect()->intended('/');
             }
 
+            // --- BAGIAN INI YANG DIUBAH ---
+
+            // 1. Login-kan user yang sudah didapat/dibuat di atas
+            Auth::login($user);
+
+            // 2. Cek Role untuk menentukan tujuan
+            if ($user->role === 'admin') {
+                return redirect('/admin'); // Admin langsung ke Dashboard
+            }
+
+            // 3. Selain admin, lempar ke Home
+            return redirect('/');
+
         } catch (Exception $e) {
-            // DEBUG: Tampilkan pesan error asli di layar jika gagal
             dd($e->getMessage());
         }
     }
