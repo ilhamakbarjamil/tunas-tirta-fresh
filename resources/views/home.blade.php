@@ -12,259 +12,251 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            DEFAULT: '#00A859', // Hijau Khas Bali Food Store
-                            dark: '#008F4C',
-                            light: '#E6F7EE'
-                        },
-                        accent: {
-                            DEFAULT: '#FF6B6B', // Merah muda untuk harga/sale
-                        },
-                        dark: {
-                            DEFAULT: '#333333',
-                            light: '#777777'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        primary: '#059669',
+                        secondary: '#f97316',
                     }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { font-family: 'Inter', -apple-system, sans-serif; }
+        
+        .product-hover {
+            transition: transform 0.2s ease;
+        }
+        
+        .product-hover:hover {
+            transform: translateY(-4px);
+        }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans text-dark">
+<body class="bg-white">
 
-    <div class="bg-primary text-white text-xs py-2">
-        <div class="container mx-auto px-4 flex justify-between">
-            <span>Welcome to Tunas Tirta Fresh Supplier!</span>
-            <div class="space-x-4">
-                <a href="#" class="hover:underline">My Wishlist (0)</a>
-                <a href="#" class="hover:underline">Sign In</a>
+    <!-- Top Info Bar -->
+    <div class="bg-emerald-600 text-white text-sm py-2">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <span>📍 Denpasar, Bali • Pengiriman ke seluruh Indonesia</span>
+            <div class="flex gap-4 items-center">
+                @auth
+                    <span>Hi, {{ Auth::user()->name }}</span>
+                    <form action="{{ route('logout') }}" method="POST" class="inline">
+                        @csrf
+                        <button class="underline">Logout</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="underline">Login</a>
+                @endauth
             </div>
         </div>
     </div>
 
-    <div class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex items-center justify-between gap-8">
-            <a href="#" class="flex items-center gap-2 flex-shrink-0">
-                <span class="text-3xl">🍏</span>
-                <div>
-                    <h1 class="text-2xl font-bold text-primary tracking-tight">TunasTirta<span class="text-accent">Fresh</span></h1>
-                </div>
-            </a>
-
-            <div class="flex-grow max-w-2xl hidden md:block relative">
-                <input type="text" placeholder="Cari buah, jus, atau frozen food..." class="w-full border border-gray-300 rounded-full py-2.5 px-6 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
-                <button class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white p-2 rounded-full hover:bg-primary-dark">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </button>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <a href="https://wa.me/62812345678" target="_blank" class="flex items-center gap-2 text-dark hover:text-primary font-semibold">
-                    <div class="relative">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                        <span class="absolute -top-1 -right-1 bg-accent text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+    <!-- Main Header -->
+    <header class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-20">
+                
+                <a href="{{ route('home') }}" class="flex items-center gap-3">
+                    <div class="w-11 h-11 bg-emerald-100 rounded-lg flex items-center justify-center">
+                        <span class="text-2xl">🥑</span>
                     </div>
-                    <span class="hidden md:inline">Cart</span>
+                    <div>
+                        <div class="font-bold text-lg text-gray-900">Tunas Tirta Fresh</div>
+                        <div class="text-xs text-gray-500">Supplier Buah & Sayur</div>
+                    </div>
                 </a>
+
+                <div class="hidden md:flex flex-1 max-w-md mx-12">
+                    <input type="text" 
+                           placeholder="Cari produk..." 
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <a href="{{ route('cart.index') }}" class="relative">
+                        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
+                            {{ Auth::check() ? Auth::user()->carts->sum('quantity') : 0 }}
+                        </span>
+                    </a>
+
+                    @auth
+                        @if(Auth::user()->role === 'admin')
+                            <a href="{{ url('/admin') }}" class="text-sm px-3 py-1.5 bg-gray-900 text-white rounded-md">Admin</a>
+                        @endif
+                    @else
+                        <a href="{{ route('login') }}" class="text-sm font-medium text-emerald-600">Login</a>
+                    @endauth
+                </div>
             </div>
-        </div>
 
-        <div class="border-t border-gray-100 bg-white relative">
-            <div class="container mx-auto px-4">
-                <ul class="flex justify-center gap-8 text-sm font-bold uppercase tracking-wide text-dark-light">
-                    
-                    <li><a href="#" class="py-4 block hover:text-primary transition">Home</a></li>
-
+            <!-- Navigation -->
+            <nav class="border-t">
+                <ul class="flex gap-8 text-sm font-medium">
+                    <li><a href="{{ route('home') }}" class="py-4 inline-block text-gray-700 hover:text-emerald-600">Home</a></li>
                     @foreach($categories as $category)
-                    <li class="group static"> <a href="#{{ $category->slug }}" class="py-4 block hover:text-primary cursor-pointer border-b-2 border-transparent group-hover:border-primary transition relative">
+                    <li class="relative group">
+                        <a href="#{{ $category->slug }}" class="py-4 inline-block text-gray-700 hover:text-emerald-600">
                             {{ $category->name }}
-                            @if($category->products->count() > 0)
-                                <span class="ml-1 text-[10px] opacity-50">▼</span>
-                            @endif
                         </a>
-
+                        
                         @if($category->products->count() > 0)
-                        <div class="absolute left-0 top-full w-full bg-white shadow-xl border-t border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform translate-y-2 group-hover:translate-y-0">
-                            <div class="container mx-auto px-4 py-8">
-                                <div class="flex gap-8">
-                                    
-                                    <div class="w-1/4 border-r border-gray-100 pr-8">
-                                        <h3 class="text-xl font-bold text-primary mb-4">{{ $category->name }}</h3>
-                                        <ul class="space-y-2 text-gray-500 font-normal capitalize">
-                                            <li class="hover:text-primary cursor-pointer">Semua {{ $category->name }}</li>
-                                            <li class="hover:text-primary cursor-pointer">Terlaris</li>
-                                            <li class="hover:text-primary cursor-pointer">Promo Hari Ini</li>
-                                            <li class="hover:text-primary cursor-pointer">New Arrival</li>
-                                        </ul>
-                                        <a href="#{{ $category->slug }}" class="mt-6 inline-block text-xs font-bold text-primary border border-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                                            Lihat Semua Produk →
-                                        </a>
+                        <div class="hidden group-hover:block absolute top-full left-0 bg-white border shadow-lg rounded-lg mt-0 w-80 p-4">
+                            <div class="space-y-3">
+                                @foreach($category->products->take(3) as $product)
+                                <a href="{{ route('product.show', $product->slug) }}" class="flex gap-3 hover:bg-gray-50 p-2 rounded">
+                                    @if($product->image)
+                                        <img src="{{ asset('storage/' . $product->image) }}" class="w-16 h-16 object-cover rounded" alt="{{ $product->name }}">
+                                    @else
+                                        <div class="w-16 h-16 bg-gray-100 rounded"></div>
+                                    @endif
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
+                                        <div class="text-sm text-orange-600 font-semibold mt-1">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
                                     </div>
-
-                                    <div class="w-3/4">
-                                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Highlight Produk</h4>
-                                        <div class="grid grid-cols-4 gap-6">
-                                            @foreach($category->products->take(4) as $product)
-                                            <div class="group/item text-center cursor-pointer">
-                                                <div class="bg-gray-50 rounded-lg p-4 mb-3 hover:shadow-md transition duration-300 relative overflow-hidden h-32 flex items-center justify-center">
-                                                    @if($product->image)
-                                                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="max-h-full object-contain transform group-hover/item:scale-110 transition duration-500">
-                                                    @else
-                                                        <span class="text-xs text-gray-400">No Image</span>
-                                                    @endif
-                                                </div>
-                                                <h5 class="text-sm font-semibold text-gray-800 group-hover/item:text-primary transition">{{ $product->name }}</h5>
-                                                @if($product->price)
-                                                    <p class="text-accent font-bold text-sm">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                                                @else
-                                                    <p class="text-xs text-gray-400">Hubungi Admin</p>
-                                                @endif
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-
-                                </div>
+                                </a>
+                                @endforeach
                             </div>
                         </div>
                         @endif
-                        </li>
+                    </li>
                     @endforeach
-
-                    <li><a href="#about" class="py-4 block hover:text-primary transition">About Us</a></li>
+                    <li><a href="#about" class="py-4 inline-block text-gray-700 hover:text-emerald-600">Tentang</a></li>
                 </ul>
-            </div>
+            </nav>
         </div>
-    </div>
-
-    <header class="relative bg-primary-light h-[400px] md:h-[500px] flex items-center overflow-hidden">
-        <div class="absolute right-0 top-0 h-full w-1/2 bg-primary/10 rounded-l-full hidden md:block"></div>
-        <div class="container mx-auto px-4 relative z-10 flex items-center">
-            <div class="max-w-xl">
-                <span class="bg-white text-primary px-3 py-1 rounded text-xs font-bold shadow-sm mb-4 inline-block">FRESH FROM BALI</span>
-                <h2 class="text-4xl md:text-6xl font-extrabold text-dark mb-6 leading-tight">
-                    Healthy Life with <br> <span class="text-primary">Fresh Products</span>
-                </h2>
-                <p class="text-lg text-gray-600 mb-8">
-                    Temukan buah segar, sayuran organik, dan produk frozen berkualitas tinggi langsung dari petani lokal Bali.
-                </p>
-                <a href="#katalog" class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-full font-bold shadow-lg transition transform hover:-translate-y-1 inline-flex items-center gap-2">
-                    Belanja Sekarang
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                </a>
-            </div>
-        </div>
-        <img src="https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=2070&auto=format&fit=crop" class="absolute right-10 md:right-20 top-1/2 transform -translate-y-1/2 w-64 md:w-96 h-64 md:h-96 object-cover rounded-full shadow-2xl border-4 border-white hidden md:block" alt="Banner Fruit">
     </header>
 
-    <main id="katalog" class="py-16 bg-white">
-        <div class="container mx-auto px-4">
+    <!-- Hero -->
+    <section class="bg-gradient-to-b from-emerald-50 to-white">
+        <div class="max-w-7xl mx-auto px-4 py-16">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-block bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-4">
+                        🌱 Fresh from Bali
+                    </div>
+                    <h1 class="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                        Buah & Sayur Segar Setiap Hari
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Langsung dari petani lokal Bali ke rumah Anda. Kualitas terjamin, harga terjangkau.
+                    </p>
+                    <a href="#katalog" class="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-emerald-700">
+                        Lihat Produk
+                    </a>
+                </div>
+                <div>
+                    <img src="https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=800" 
+                         class="w-full rounded-2xl shadow-xl" 
+                         alt="Fresh Fruits">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products -->
+    <main id="katalog" class="py-16">
+        <div class="max-w-7xl mx-auto px-4">
             
             @foreach($categories as $category)
-            <div id="{{ $category->slug }}" class="mb-20 scroll-mt-32"> <div class="flex items-end justify-between mb-8 border-b border-gray-100 pb-4">
-                    <div>
-                        <span class="text-primary font-bold text-sm tracking-widest uppercase mb-1 block">Fresh Collection</span>
-                        <h3 class="text-3xl font-bold text-dark">{{ $category->name }}</h3>
-                    </div>
-                    <a href="#" class="text-sm font-semibold text-primary hover:text-primary-dark transition hidden md:block">Lihat Semua →</a>
+            <section id="{{ $category->slug }}" class="mb-16 scroll-mt-24">
+                
+                <div class="flex items-baseline justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">{{ $category->name }}</h2>
+                    <a href="#" class="text-sm text-emerald-600 hover:underline">Lihat semua</a>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
                     @foreach($category->products as $product)
-                    <div class="bg-white border border-gray-100 rounded-xl hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                    <a href="{{ route('product.show', $product->slug) }}" class="product-hover bg-white border rounded-lg overflow-hidden group">
                         
-                        <div class="h-48 p-4 bg-gray-50 relative">
+                        <div class="aspect-square bg-gray-50 p-4 relative">
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition duration-500">
+                                <img src="{{ asset('storage/' . $product->image) }}" 
+                                     alt="{{ $product->name }}" 
+                                     class="w-full h-full object-contain">
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-gray-300">
-                                    <span class="text-xs">No Image</span>
+                                    No image
                                 </div>
                             @endif
                             
                             @if(!$product->is_available)
-                                <span class="absolute top-2 left-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded font-bold">SOLD OUT</span>
-                            @else
-                                <span class="absolute top-2 left-2 bg-green-100 text-primary text-[10px] px-2 py-1 rounded font-bold">FRESH</span>
+                                <div class="absolute top-2 left-2 bg-gray-900 text-white text-xs px-2 py-1 rounded">Habis</div>
                             @endif
-
-                            <div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition translate-y-2 group-hover:translate-y-0">
-                                <button class="bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary-dark" title="Add to Cart">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                </button>
-                            </div>
                         </div>
 
-                        <div class="p-4 text-center">
-                            <h4 class="font-bold text-gray-800 text-sm mb-1 group-hover:text-primary transition">{{ $product->name }}</h4>
-                            <p class="text-xs text-gray-500 mb-2 line-clamp-1">{{ $product->description ?? 'Premium Quality' }}</p>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm text-gray-900 mb-1 line-clamp-2">{{ $product->name }}</h3>
                             
                             @if($product->price)
-                                <span class="block text-accent font-bold">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                                <div class="text-orange-600 font-bold">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
                             @else
-                                <span class="text-xs italic text-gray-400">Hubungi Admin</span>
+                                <div class="text-xs text-gray-500">Hubungi admin</div>
                             @endif
                         </div>
-                    </div>
+                    </a>
                     @endforeach
                 </div>
 
                 @if($category->products->count() == 0)
-                    <div class="bg-gray-50 rounded-lg p-8 text-center border-2 border-dashed border-gray-200">
-                        <p class="text-gray-400">Belum ada produk di kategori ini.</p>
+                    <div class="bg-gray-50 border-2 border-dashed rounded-lg p-8 text-center text-gray-500">
+                        Belum ada produk
                     </div>
                 @endif
 
-            </div>
+            </section>
             @endforeach
 
         </div>
     </main>
 
-    <footer class="bg-white border-t border-gray-200 pt-16 pb-8">
-        <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-8 mb-12">
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
                 <div>
-                    <h4 class="font-bold text-lg mb-4">Tunas Tirta Fresh</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">
-                        Jl. Cargo Sari III, Ubung Kaja,<br>Denpasar Utara, Bali.<br>
-                        <br>
+                    <div class="font-bold text-white text-lg mb-3">Tunas Tirta Fresh</div>
+                    <p class="text-sm leading-relaxed">
+                        Jl. Cargo Sari III, Ubung Kaja,<br>
+                        Denpasar Utara, Bali<br><br>
                         WhatsApp: +62 812-3456-7890
                     </p>
                 </div>
                 <div>
-                    <h4 class="font-bold mb-4">Kategori</h4>
-                    <ul class="text-sm text-gray-500 space-y-2">
-                        <li><a href="#" class="hover:text-primary">Fresh Fruits</a></li>
-                        <li><a href="#" class="hover:text-primary">Vegetables</a></li>
-                        <li><a href="#" class="hover:text-primary">Frozen Food</a></li>
-                        <li><a href="#" class="hover:text-primary">Juice & Drinks</a></li>
+                    <div class="font-semibold text-white mb-3">Kategori</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white">Fresh Fruits</a></li>
+                        <li><a href="#" class="hover:text-white">Vegetables</a></li>
+                        <li><a href="#" class="hover:text-white">Frozen</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-bold mb-4">Bantuan</h4>
-                    <ul class="text-sm text-gray-500 space-y-2">
-                        <li><a href="#" class="hover:text-primary">Cara Pemesanan</a></li>
-                        <li><a href="#" class="hover:text-primary">Info Pengiriman</a></li>
-                        <li><a href="#" class="hover:text-primary">Hubungi Kami</a></li>
-                        <li><a href="#" class="hover:text-primary">Privacy Policy</a></li>
+                    <div class="font-semibold text-white mb-3">Bantuan</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white">Cara Pesan</a></li>
+                        <li><a href="#" class="hover:text-white">Pengiriman</a></li>
+                        <li><a href="#" class="hover:text-white">Kontak</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-bold mb-4">Metode Pembayaran</h4>
-                    <div class="flex gap-2">
-                        <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                        <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                        <div class="w-10 h-6 bg-gray-200 rounded"></div>
+                    <div class="font-semibold text-white mb-3">Ikuti Kami</div>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-9 h-9 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
+                        <a href="#" class="w-9 h-9 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/><path d="M12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a3.999 3.999 0 110-7.998 3.999 3.999 0 010 7.998z"/><circle cx="18.406" cy="5.594" r="1.44"/></svg>
+                        </a>
                     </div>
                 </div>
             </div>
-            <div class="text-center text-xs text-gray-400 pt-8 border-t border-gray-100">
-                &copy; {{ date('Y') }} PT. Alam Tunas Tirta. All rights reserved.
+            <div class="border-t border-gray-800 pt-6 text-sm text-center text-gray-400">
+                © {{ date('Y') }} PT. Alam Tunas Tirta. All rights reserved.
             </div>
         </div>
     </footer>
