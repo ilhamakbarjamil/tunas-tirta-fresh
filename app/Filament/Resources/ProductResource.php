@@ -57,6 +57,20 @@ class ProductResource extends Resource
                     ->label('Harga Satuan')
                     ->nullable(), // Boleh kosong sesuai request klien
 
+                Forms\Components\TextInput::make('price')
+                    ->required()
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->label('Harga Satuan'),
+
+                // --- TAMBAHKAN INI ---
+                Forms\Components\TextInput::make('stock')
+                    ->required()
+                    ->numeric()
+                    ->default(10) // Contoh default 10
+                    ->label('Stok Barang'),
+                // ---------------------    
+
                 Forms\Components\Repeater::make('variants')
                     ->relationship()
                     ->schema([

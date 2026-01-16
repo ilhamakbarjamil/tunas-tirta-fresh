@@ -3,11 +3,17 @@
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman Utama
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/product/{slug}', [HomeController::class, 'show'])->name('product.show');
+Route::get('/product/{slug}', [ProductController::class, 'show'])->name('products.show');
+Route::post('/cart/decrease/{id}', [App\Http\Controllers\CartController::class, 'decrease'])->name('cart.decrease');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+Route::view('/about', 'about')->name('about');
 
 // Login Google
 Route::view('/login', 'auth.login')->name('login');
@@ -27,9 +33,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
 });
 
 // Admin Redirect
 Route::get('/login-admin', function () {
     return redirect('/admin/login');
 });
+

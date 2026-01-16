@@ -5,17 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Xendit\Configuration;
+use Xendit\Invoice\InvoiceApi;
+use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
-    // 1. Lihat Keranjang
     public function index()
     {
-        $carts = Auth::user()->carts()->with('product')->get();
+        $carts = Auth::user()->carts()->with(['product', 'variant'])->get();
         return view('cart.index', compact('carts'));
     }
 
-    // 2. Tambah Barang
     public function add(Request $request, $productId)
     {
         if (!Auth::check()) {
@@ -23,75 +24,157 @@ class CartController extends Controller
         }
 
         $user = Auth::user();
-        $variantId = $request->input('variant_id'); // Ambil data dari dropdown
+        $variantId = $request->input('variant_id'); 
 
-        // Cek apakah produk + varian ini sudah ada di keranjang?
-        $existingCart = Cart::where('user_id', $user->id)
-            ->where('product_id', $productId)
-            ->where('product_variant_id', $variantId) // Cek variannya juga
-            ->first();
+        // ... (LOGIKA CEK CART LAMA TETAP SAMA, TIDAK BERUBAH) ...
+        $existingCart = \App\Models\Cart::where('user_id', $user->id)
+                            ->where('product_id', $productId)
+                            ->where('product_variant_id', $variantId)
+                            ->first();
 
         if ($existingCart) {
-            $existingCart->increment('quantity');
+            $existingCart->increment('quantity', $request->input('quantity', 1));
         } else {
-            Cart::create([
+            \App\Models\Cart::create([
                 'user_id' => $user->id,
                 'product_id' => $productId,
-                'product_variant_id' => $variantId, // Simpan varian ID
-                'quantity' => 1
+                'product_variant_id' => $variantId,
+                'quantity' => $request->input('quantity', 1)
             ]);
         }
 
-        return redirect()->back()->with('success', 'Produk berhasil masuk keranjang!');
+        // --- UPDATE DI SINI ---
+        // Kita kirim sinyal 'show_cart' => true agar Sidebar otomatis terbuka
+        return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
     }
 
-    // 3. Hapus Barang
     public function destroy($id)
     {
         Cart::find($id)->delete();
         return redirect()->back()->with('success', 'Produk dihapus.');
     }
 
-    // 4. Checkout WA
-    public function checkout()
+    // --- FITUR UTAMA: CHECKOUT XENDIT ---
+    // PERBAIKAN: Tambahkan (Request $request) di dalam kurung
+    public function checkout(Request $request)
     {
+        // 1. Validasi Input (Wajib isi Alamat)
+        $request->validate([
+            'address' => 'required|string|max:500',
+            'note' => 'nullable|string|max:200',
+        ], [
+            'address.required' => 'Mohon isi alamat pengiriman dulu ya kak!',
+        ]);
+
         $user = Auth::user();
-        // Ambil keranjang beserta data produk DAN variannya
         $carts = $user->carts()->with(['product', 'variant'])->get();
 
         if ($carts->isEmpty()) {
             return redirect()->back()->with('error', 'Keranjang kosong!');
         }
 
-        // Header Pesan WA
-        $text = "Halo Tunas Tirta Fresh, saya *" . $user->name . "* ingin memesan:\n\n";
-        $total = 0;
+        // 2. Buat ID Unik Xendit
+        $externalId = 'ORDER-' . time() . '-' . Str::random(5); 
+        
+        // 3. Simpan Order ke Database (Plus Alamat & Catatan)
+        $order = \App\Models\Order::create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'total_price' => 0, 
+            'external_id' => $externalId,
+            'address' => $request->address, // <--- Ambil dari form
+            'note' => $request->note,       // <--- Ambil dari form
+        ]);
 
+        $totalOrder = 0;
+        $itemsForXendit = []; 
+
+        // 4. Pindahkan Keranjang ke Order Items
         foreach ($carts as $cart) {
-            // LOGIKA PENENTUAN HARGA & NAMA
             if ($cart->variant) {
-                // Jika user pilih varian (Misal: 1 Kg)
                 $price = $cart->variant->price;
                 $productName = $cart->product->name . " (" . $cart->variant->name . ")";
+                $variantId = $cart->variant->id;
             } else {
-                // Jika produk standar (tanpa varian)
                 $price = $cart->product->price;
                 $productName = $cart->product->name;
+                $variantId = null;
             }
 
             $subtotal = $price * $cart->quantity;
-            
-            // Format Baris: 📦 Apel Fuji (1 Kg) (2x) = Rp 70.000
-            $text .= "📦 " . $productName . " (" . $cart->quantity . "x) = Rp " . number_format($subtotal, 0, ',', '.') . "\n";
-            
-            $total += $subtotal;
+            $totalOrder += $subtotal;
+
+            \App\Models\OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $cart->product_id,
+                'product_variant_id' => $variantId,
+                'quantity' => $cart->quantity,
+                'price' => $price,
+            ]);
+
+            $itemsForXendit[] = [
+                'name' => $productName,
+                'quantity' => $cart->quantity,
+                'price' => $price,
+                'category' => 'Buah Segar',
+            ];
         }
 
-        // Footer Pesan WA
-        $text .= "\n💰 *Total Belanja: Rp " . number_format($total, 0, ',', '.') . "*";
-        $text .= "\n\nMohon diproses, terima kasih!";
+        // Update Total Harga
+        $order->update(['total_price' => $totalOrder]);
 
-        // Kirim ke WhatsApp
-        return redirect("https://wa.me/62812345678?text=" . urlencode($text));
+        // 5. KIRIM KE XENDIT
+        Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
+        $apiInstance = new InvoiceApi();
+
+        $create_invoice_request = new \Xendit\Invoice\CreateInvoiceRequest([
+            'external_id' => $externalId,
+            'amount' => $totalOrder,
+            'description' => 'Tagihan Order #' . $order->id,
+            'invoice_duration' => 86400, 
+            'customer' => [
+                'given_names' => $user->name,
+                'email' => $user->email,
+                // Kita bisa kirim alamat ke Xendit juga (Opsional)
+                'addresses' => [
+                    [
+                        'city' => 'Indonesia',
+                        'country' => 'ID',
+                        'street_line1' => $request->address
+                    ]
+                ]
+            ],
+            'success_redirect_url' => route('orders.index'),
+            'failure_redirect_url' => route('home'),
+            'currency' => 'IDR',
+            'items' => $itemsForXendit
+        ]);
+
+        try {
+            $result = $apiInstance->createInvoice($create_invoice_request);
+            
+            $order->update(['payment_url' => $result['invoice_url']]);
+            $user->carts()->delete();
+
+            return redirect($result['invoice_url']);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+        }
+    }
+
+    public function decrease($id)
+    {
+        $cart = \App\Models\Cart::find($id);
+        
+        if ($cart) {
+            if ($cart->quantity > 1) {
+                $cart->decrement('quantity'); // Kurangi 1
+            } else {
+                $cart->delete(); // Kalau sisa 1 dikurangi, jadi hapus
+            }
+        }
+        
+        return redirect()->back();
     }
 }

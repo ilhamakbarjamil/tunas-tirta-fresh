@@ -1,86 +1,168 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keranjang Belanja</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 font-sans">
-    <div class="bg-white shadow p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="{{ route('home') }}" class="font-bold text-gray-600">← Kembali</a>
-            <h1 class="text-xl font-bold text-green-600">Keranjang Saya</h1>
-        </div>
-    </div>
+@extends('layouts.app')
 
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        @if($carts->isEmpty())
-            <div class="text-center py-20">
-                <p class="text-gray-400 text-xl">Keranjang Kosong.</p>
-                <a href="{{ route('home') }}" class="mt-4 inline-block bg-green-600 text-white px-6 py-2 rounded-full">Belanja Dulu</a>
-            </div>
-        @else
-            <div class="bg-white rounded-xl shadow overflow-hidden">
-                @php $grandTotal = 0; @endphp
+@section('content')
+<div class="container mx-auto px-4 py-10">
+    
+    <h1 class="text-3xl font-light text-red-400 mb-8">Shopping cart</h1>
+
+    @if($carts->isEmpty())
+        <div class="text-center py-20 bg-white rounded-xl shadow-sm">
+            <i class="fas fa-shopping-basket text-6xl text-gray-200 mb-4"></i>
+            <p class="text-gray-500 text-lg">Keranjang belanja Anda masih kosong.</p>
+            <a href="{{ route('home') }}" class="inline-block mt-4 text-primary font-bold hover:underline">
+                Mulai Belanja &rarr;
+            </a>
+        </div>
+    @else
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                 
                 @foreach($carts as $cart)
-                    @php 
-                        // LOGIKA PINTAR: Cek apakah item ini punya varian?
-                        if($cart->variant) {
-                            $price = $cart->variant->price;
-                            $variantName = ' (' . $cart->variant->name . ')';
-                        } else {
-                            $price = $cart->product->price;
-                            $variantName = ''; // Kosong kalau tidak ada varian
-                        }
+                <div class="flex items-center p-6 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
+                    
+                    <div class="w-24 h-24 flex-shrink-0 bg-gray-50 rounded-md border border-gray-200 overflow-hidden p-2">
+                        <img src="{{ asset('storage/' . $cart->product->image) }}" 
+                             alt="{{ $cart->product->name }}" 
+                             class="w-full h-full object-contain">
+                    </div>
 
-                        $subtotal = $price * $cart->quantity; 
-                        $grandTotal += $subtotal;
-                    @endphp
-
-                    <div class="flex items-center justify-between p-4 border-b">
-                        <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                                @if($cart->product->image) 
-                                    <img src="{{ asset('storage/'.$cart->product->image) }}" class="h-full object-contain"> 
-                                @else 
-                                    <span class="text-xs text-gray-400">No IMG</span> 
+                    <div class="ml-6 flex-1">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">
+                                    {{ $cart->product->name }}
+                                </h3>
+                                @if($cart->variant)
+                                    <p class="text-sm text-gray-400 mt-1">Weight: {{ $cart->variant->name }}</p>
+                                @else
+                                    <p class="text-sm text-gray-400 mt-1">Satuan: Pack</p>
                                 @endif
                             </div>
                             
-                            <div>
-                                <h3 class="font-bold text-gray-800">
-                                    {{ $cart->product->name }} <span class="text-green-600 text-sm">{{ $variantName }}</span>
-                                </h3>
-                                <p class="text-sm text-gray-500">
-                                    {{ $cart->quantity }} x Rp {{ number_format($price, 0, ',', '.') }}
-                                </p>
+                            <div class="text-right">
+                                @php
+                                    $price = $cart->variant ? $cart->variant->price : $cart->product->price;
+                                @endphp
+                                <p class="text-lg font-bold text-gray-800">Rp {{ number_format($price, 0, ',', '.') }}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-4">
-                            <span class="font-bold text-red-500">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                        <div class="flex justify-between items-end mt-4">
                             
+                            <div class="flex items-center bg-gray-100 rounded-lg h-10">
+                                <form action="{{ route('cart.decrease', $cart->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="px-3 text-gray-500 hover:text-red-500 transition h-full font-bold text-lg">-</button>
+                                </form>
+                                
+                                <input type="text" value="{{ $cart->quantity }}" readonly 
+                                       class="w-10 bg-transparent text-center text-sm font-bold text-gray-700 focus:outline-none">
+                                
+                                <form action="{{ route('cart.add', $cart->product_id) }}" method="POST">
+                                    @csrf
+                                    @if($cart->product_variant_id)
+                                        <input type="hidden" name="variant_id" value="{{ $cart->product_variant_id }}">
+                                    @endif
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="px-3 text-gray-500 hover:text-green-600 transition h-full font-bold text-lg">+</button>
+                                </form>
+                            </div>
+
                             <form action="{{ route('cart.destroy', $cart->id) }}" method="POST">
-                                @csrf @method('DELETE')
-                                <button class="text-gray-300 hover:text-red-500 font-bold text-xl">&times;</button>
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-gray-300 hover:text-red-500 transition text-xl p-2" title="Hapus Barang">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
                             </form>
                         </div>
                     </div>
+                </div>
                 @endforeach
 
-                <div class="p-6 bg-green-50 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div>
-                        <p class="text-sm text-gray-500">Total Pembayaran</p>
-                        <h2 class="text-3xl font-bold text-gray-800">Rp {{ number_format($grandTotal, 0, ',', '.') }}</h2>
-                    </div>
-                    <a href="{{ route('cart.checkout') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg flex items-center gap-2">
-                        Checkout WhatsApp
-                    </a>
-                </div>
             </div>
-        @endif
+
+            <a href="{{ route('home') }}" class="inline-block mt-6 px-6 py-3 bg-gray-200 text-gray-600 font-semibold rounded-full hover:bg-gray-300 transition">
+                &larr; Continue shopping
+            </a>
+        </div>
+
+
+        <div class="lg:col-span-1">
+            <div class="bg-gray-50 rounded-xl p-6 sticky top-24 border border-gray-100">
+                
+                <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Order Summary</h3>
+
+                <div class="space-y-3 mb-6">
+                    <div class="flex justify-between text-gray-600">
+                        <span>{{ $carts->count() }} items</span>
+                        @php
+                            $total = $carts->sum(function($item) {
+                                $p = $item->variant ? $item->variant->price : $item->product->price;
+                                return $p * $item->quantity;
+                            });
+                        @endphp
+                        <span class="font-bold">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span class="border-b border-dotted border-gray-400 cursor-pointer">Delivery</span>
+                        <span class="text-green-600 font-bold">Free</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Taxes</span>
+                        <span>Rp 0</span>
+                    </div>
+                    <div class="pt-4 border-t flex justify-between items-center text-xl font-bold text-gray-800">
+                        <span>TOTAL</span>
+                        <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <a href="#" class="text-sm text-gray-500 underline hover:text-primary">Have a promo code?</a>
+                </div>
+
+                <form action="{{ route('cart.checkout') }}" method="GET">
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Alamat Pengiriman <span class="text-red-500">*</span></label>
+                        <textarea name="address" rows="3" required placeholder="Jalan, No. Rumah, Kecamatan..." class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-white"></textarea>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Catatan (Opsional)</label>
+                        <input type="text" name="note" placeholder="Pagar hitam / Titip satpam" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-white">
+                    </div>
+
+                    <button type="submit" class="w-full bg-primary hover:bg-green-600 text-white font-bold py-4 rounded-full shadow-lg transition transform hover:scale-105">
+                        Checkout
+                    </button>
+                </form>
+
+                <div class="mt-8 space-y-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-tree text-green-600 text-xl mt-1"></i>
+                        <div>
+                            <h4 class="font-bold text-sm text-gray-800">Locally Sourced</h4>
+                            <p class="text-xs text-gray-500">Supporting local farmers & producers.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-truck text-green-600 text-xl mt-1"></i>
+                        <div>
+                            <h4 class="font-bold text-sm text-gray-800">Express Delivery</h4>
+                            <p class="text-xs text-gray-500">Convenient delivery to your door.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
     </div>
-</body>
-</html>
+    @endif
+</div>
+@endsection
