@@ -15,6 +15,10 @@ class Order extends Model
         'status',
         'total_price',
         'snap_token', // Jaga-jaga kalau kolom ini sudah ada di database
+        'payment_url', 
+        'external_id',
+        'address',
+        'note',
     ];
 
     // Relasi: Order milik 1 User

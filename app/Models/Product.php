@@ -19,6 +19,7 @@ class Product extends Model
         'price',
         'image',
         'is_available',
+        'stock',
     ];
 
     // Definisi relasi ke Category (agar Filament bisa baca)

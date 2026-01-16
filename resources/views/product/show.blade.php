@@ -51,13 +51,14 @@
                             <label class="block text-gray-700 font-bold mb-2">Pilih Ukuran:</label>
                             <select name="variant_id" class="w-full border-gray-300 rounded-lg p-3 focus:ring-green-500"
                                 x-on:change="
-                                                const selected = $event.target.options[$event.target.selectedIndex];
-                                                selectedPrice = selected.dataset.price;
-                                                selectedVariant = selected.value;
-                                            " required>
+                                                        const selected = $event.target.options[$event.target.selectedIndex];
+                                                        selectedPrice = selected.dataset.price;
+                                                        selectedVariant = selected.value;
+                                                    " required>
                                 <option value="" disabled selected>-- Pilih Varian --</option>
                                 <option value="" data-price="{{ $product->price }}">Standar (Rp
-                                    {{ number_format($product->price) }})</option>
+                                    {{ number_format($product->price) }})
+                                </option>
 
                                 @foreach($product->variants as $variant)
                                     <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
@@ -68,10 +69,30 @@
                         </div>
                     @endif
 
-                    <button type="submit"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg">
-                        Tambah ke Keranjang
-                    </button>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">
+                            Status:
+                            @if($product->stock > 5)
+                                <span class="font-bold text-green-600">✅ Tersedia (Ready Stock)</span>
+                            @elseif($product->stock > 0 && $product->stock <= 5)
+                                <span class="font-bold text-orange-500">🔥 Stok Menipis!</span>
+                            @else
+                                <span class="font-bold text-red-600">❌ Stok Habis</span>
+                            @endif
+                        </p>
+                    </div>
+
+                    @if($product->stock > 0)
+                        <button type="submit"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                            Tambah ke Keranjang
+                        </button>
+                    @else
+                        <button type="button" disabled
+                            class="w-full bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed">
+                            Barang Sedang Kosong
+                        </button>
+                    @endif
                 </form>
             </div>
         </div>
