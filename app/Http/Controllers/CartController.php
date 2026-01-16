@@ -24,25 +24,28 @@ class CartController extends Controller
         }
 
         $user = Auth::user();
-        $variantId = $request->input('variant_id');
+        $variantId = $request->input('variant_id'); 
 
-        $existingCart = Cart::where('user_id', $user->id)
-            ->where('product_id', $productId)
-            ->where('product_variant_id', $variantId)
-            ->first();
+        // ... (LOGIKA CEK CART LAMA TETAP SAMA, TIDAK BERUBAH) ...
+        $existingCart = \App\Models\Cart::where('user_id', $user->id)
+                            ->where('product_id', $productId)
+                            ->where('product_variant_id', $variantId)
+                            ->first();
 
         if ($existingCart) {
-            $existingCart->increment('quantity');
+            $existingCart->increment('quantity', $request->input('quantity', 1));
         } else {
-            Cart::create([
+            \App\Models\Cart::create([
                 'user_id' => $user->id,
                 'product_id' => $productId,
                 'product_variant_id' => $variantId,
-                'quantity' => 1
+                'quantity' => $request->input('quantity', 1)
             ]);
         }
 
-        return redirect()->back()->with('success', 'Produk masuk keranjang!');
+        // --- UPDATE DI SINI ---
+        // Kita kirim sinyal 'show_cart' => true agar Sidebar otomatis terbuka
+        return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
     }
 
     public function destroy($id)
@@ -158,5 +161,20 @@ class CartController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
         }
+    }
+
+    public function decrease($id)
+    {
+        $cart = \App\Models\Cart::find($id);
+        
+        if ($cart) {
+            if ($cart->quantity > 1) {
+                $cart->decrement('quantity'); // Kurangi 1
+            } else {
+                $cart->delete(); // Kalau sisa 1 dikurangi, jadi hapus
+            }
+        }
+        
+        return redirect()->back();
     }
 }

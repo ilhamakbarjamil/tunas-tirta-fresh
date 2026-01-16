@@ -2,37 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Product; // Pastikan ini ada!
 use Illuminate\Http\Request;
+use App\Models\Product; // <--- PENTING: Panggil Model Produk
 
 class HomeController extends Controller
 {
-    public function index()
+    /**
+     * Show the application dashboard.
+     *
+     * @return \Illuminate\Contracts\Support\Renderable
+     */
+    public function index(Request $request) // <--- Tambahkan Request $request
     {
-        // Ambil kategori dan produknya untuk halaman depan
-        $categories = Category::with(['products' => function($query) {
-            $query->where('is_available', true);
-        }])->get();
+        // Mulai Query Produk + Varian
+        $query = Product::with('variants');
 
-        return view('home', compact('categories'));
-    }
+        // 1. LOGIKA SEARCH
+        if ($request->has('search') && $request->search != '') {
+            $keyword = $request->search;
+            // Cari berdasarkan Nama Produk
+            $query->where('name', 'like', '%' . $keyword . '%');
+        }
 
-    // FUNGSI BARU: Menampilkan Detail Produk
-    public function show($slug)
-    {
-        // 1. Cari produk berdasarkan slug, kalau tidak ketemu tampilkan 404
-        $product = Product::where('slug', $slug)
-                          ->where('is_available', true)
-                          ->firstOrFail();
+        // Ambil data (urutkan terbaru)
+        $products = $query->latest()->get();
 
-        // 2. Ambil produk lain di kategori yang sama (untuk rekomendasi)
-        // Kecuali produk yang sedang dibuka
-        $relatedProducts = Product::where('category_id', $product->category_id)
-                                  ->where('id', '!=', $product->id)
-                                  ->take(4)
-                                  ->get();
-
-        return view('product.show', compact('product', 'relatedProducts'));
+        return view('home', compact('products'));
     }
 }

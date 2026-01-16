@@ -1,102 +1,97 @@
-<!DOCTYPE html>
-<html lang="id">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $product->name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<body class="bg-gray-50 font-sans">
-    <div class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="flex items-center gap-2 text-green-600 font-bold">← Kembali</a>
-            <a href="{{ route('cart.index') }}" class="relative p-2">
-                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                </svg>
-                <span
-                    class="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                    {{ Auth::check() ? Auth::user()->carts->sum('quantity') : 0 }}
-                </span>
-            </a>
-        </div>
+@section('content')
+<div class="bg-gray-50 py-4 border-b">
+    <div class="container mx-auto px-4 text-sm text-gray-500">
+        <a href="{{ route('home') }}" class="hover:text-primary">Home</a> 
+        <span class="mx-2">/</span> 
+        <span class="text-gray-800 font-medium">{{ $product->name }}</span>
     </div>
+</div>
 
-    <main class="container mx-auto px-4 py-12">
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
-            <div class="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center">
-                @if($product->image)
-                    <img src="{{ asset('storage/' . $product->image) }}" class="max-h-[400px] object-contain">
-                @else
-                    <span class="text-gray-400">No Image</span>
-                @endif
+<div class="container mx-auto px-4 py-10">
+    <div class="bg-white rounded-xl shadow-sm border p-6 md:p-10 flex flex-col md:flex-row gap-10">
+        
+        <div class="w-full md:w-1/2 flex justify-center items-center bg-gray-50 rounded-xl p-8">
+            <img src="{{ asset('storage/' . $product->image) }}" 
+                 alt="{{ $product->name }}" 
+                 class="max-h-[400px] object-contain drop-shadow-lg hover:scale-105 transition duration-500">
+        </div>
+
+        <div class="w-full md:w-1/2">
+            <h1 class="text-3xl md:text-4xl font-bold text-dark mb-2">{{ $product->name }}</h1>
+            
+            <div class="flex items-center text-sm mb-4">
+                <div class="text-yellow-400 flex mr-2">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="text-gray-400">(15 Reviews)</span>
             </div>
-            <div x-data="{ 
-                    selectedPrice: {{ $product->price }}, 
-                    selectedVariant: null 
-                }">
 
-                <h2 class="text-3xl font-bold text-red-500 mb-6">
-                    Rp <span x-text="new Intl.NumberFormat('id-ID').format(selectedPrice)"></span>
-                </h2>
+            <div class="text-3xl font-bold text-primary mb-6">
+                Rp {{ number_format($product->price, 0, ',', '.') }}
+                <span class="text-sm font-normal text-gray-400">/ pack</span>
+            </div>
 
-                <form action="{{ route('cart.add', $product->id) }}" method="POST">
-                    @csrf
+            <p class="text-gray-500 leading-relaxed mb-8 border-b pb-8">
+                {{ $product->description }}
+            </p>
 
-                    @if($product->variants->count() > 0)
-                        <div class="mb-6">
-                            <label class="block text-gray-700 font-bold mb-2">Pilih Ukuran:</label>
-                            <select name="variant_id" class="w-full border-gray-300 rounded-lg p-3 focus:ring-green-500"
-                                x-on:change="
-                                                        const selected = $event.target.options[$event.target.selectedIndex];
-                                                        selectedPrice = selected.dataset.price;
-                                                        selectedVariant = selected.value;
-                                                    " required>
-                                <option value="" disabled selected>-- Pilih Varian --</option>
-                                <option value="" data-price="{{ $product->price }}">Standar (Rp
-                                    {{ number_format($product->price) }})
+            <form action="{{ route('cart.add', $product->id) }}" method="POST">
+                @csrf
+                
+                @if($product->variants && $product->variants->count() > 0)
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-2">Pilih Ukuran/Berat:</label>
+                        <select name="variant_id" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-primary bg-white">
+                            @foreach($product->variants as $variant)
+                                <option value="{{ $variant->id }}">
+                                    {{ $variant->name }} - Rp {{ number_format($variant->price, 0, ',', '.') }}
                                 </option>
-
-                                @foreach($product->variants as $variant)
-                                    <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
-                                        {{ $variant->name }} - Rp {{ number_format($variant->price, 0, ',', '.') }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-500">
-                            Status:
-                            @if($product->stock > 5)
-                                <span class="font-bold text-green-600">✅ Tersedia (Ready Stock)</span>
-                            @elseif($product->stock > 0 && $product->stock <= 5)
-                                <span class="font-bold text-orange-500">🔥 Stok Menipis!</span>
-                            @else
-                                <span class="font-bold text-red-600">❌ Stok Habis</span>
-                            @endif
-                        </p>
+                            @endforeach
+                        </select>
                     </div>
+                @endif
 
+                <div class="mb-6">
+                     @if($product->stock > 5)
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            ✅ Tersedia (Ready Stock)
+                        </span>
+                    @elseif($product->stock > 0)
+                        <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            🔥 Stok Menipis (Sisa {{ $product->stock }})
+                        </span>
+                    @else
+                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            ❌ Stok Habis
+                        </span>
+                    @endif
+                </div>
+
+                <div class="flex space-x-4">
                     @if($product->stock > 0)
-                        <button type="submit"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                            Tambah ke Keranjang
+                        <button type="submit" class="flex-1 bg-primary hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105 flex justify-center items-center gap-2">
+                            <i class="fas fa-shopping-cart"></i>
+                            Masukkan Keranjang
                         </button>
                     @else
-                        <button type="button" disabled
-                            class="w-full bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed">
-                            Barang Sedang Kosong
+                        <button type="button" disabled class="flex-1 bg-gray-300 text-gray-500 font-bold py-4 rounded-xl cursor-not-allowed">
+                            Stok Habis
                         </button>
                     @endif
-                </form>
+
+                    <button type="button" class="w-14 h-14 border border-gray-300 rounded-xl flex items-center justify-center text-gray-400 hover:text-danger hover:border-danger transition">
+                        <i class="far fa-heart text-xl"></i>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-8 text-sm text-gray-500 space-y-2">
+                <p><i class="fas fa-truck mr-2 text-primary"></i> Pengiriman Cepat (1-2 Jam Sampai)</p>
+                <p><i class="fas fa-shield-alt mr-2 text-primary"></i> Jaminan Buah Segar</p>
             </div>
         </div>
-    </main>
-</body>
-
-</html>
+    </div>
+</div>
+@endsection
