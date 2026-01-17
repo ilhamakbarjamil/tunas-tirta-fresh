@@ -157,25 +157,43 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        setTimeout(() => {
-            const modal = document.getElementById('promo-modal');
-            const content = document.getElementById('promo-content');
+        // 1. Ambil ID Promo yang sedang aktif dari Database
+        // Kita pakai ID sebagai penanda unik
+        const currentPromoId = "{{ $activePromo ? $activePromo->id : 'none' }}";
+
+        // 2. Cek ID apa yang terakhir dilihat user di browser ini
+        const lastSeenId = sessionStorage.getItem('last_seen_promo_id');
+
+        // 3. Logika: Munculkan HANYA jika ID-nya berbeda
+        // Artinya: Kalau promonya baru (ID beda), dia bakal muncul lagi.
+        if (currentPromoId !== 'none' && lastSeenId != currentPromoId) {
             
-            if(modal) {
-                modal.classList.remove('hidden');
+            setTimeout(() => {
+                const modal = document.getElementById('promo-modal');
+                const content = document.getElementById('promo-content');
                 
-                // Efek animasi Zoom In (Tegas)
-                setTimeout(() => {
-                    content.classList.remove('scale-95');
-                    content.classList.add('scale-100');
-                }, 50);
-            }
-        }, 500); // Muncul cepat (0.5 detik)
+                if(modal) {
+                    modal.classList.remove('hidden');
+                    
+                    // Animasi Zoom In
+                    setTimeout(() => {
+                        content.classList.remove('scale-95');
+                        content.classList.add('scale-100');
+                    }, 50);
+                }
+            }, 1000);
+        }
     });
 
     function closePromo() {
         const modal = document.getElementById('promo-modal');
-        if(modal) modal.classList.add('hidden');
+        if(modal) {
+            modal.classList.add('hidden');
+            
+            // 4. Simpan ID Promo ini sebagai "Sudah Dilihat"
+            const currentPromoId = "{{ $activePromo ? $activePromo->id : 'none' }}";
+            sessionStorage.setItem('last_seen_promo_id', currentPromoId);
+        }
     }
 </script>
 @endsection
