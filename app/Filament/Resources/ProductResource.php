@@ -29,77 +29,68 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                // Pilih Kategori (Relasi ke tabel categories)
-                Select::make('category_id')
-                    ->relationship('category', 'name')
-                    ->required()
-                    ->label('Kategori Produk'),
-
-                // Nama Produk
-                TextInput::make('name')
-                    ->required()
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(
-                        fn(string $operation, $state, \Filament\Forms\Set $set) =>
-                        $operation === 'create' ? $set('slug', Str::slug($state)) : null
-                    ),
-
-                TextInput::make('slug')
-                    ->required()
-                    ->disabled()
-                    ->dehydrated()
-                    ->unique(ignoreRecord: true),
-
-                // Harga (Tambahkan prefix 'Rp' biar cantik)
-                TextInput::make('price')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->label('Harga Satuan')
-                    ->nullable(), // Boleh kosong sesuai request klien
-
-                Forms\Components\TextInput::make('price')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->label('Harga Satuan'),
-
-                // --- TAMBAHKAN INI ---
-                Forms\Components\TextInput::make('stock')
-                    ->required()
-                    ->numeric()
-                    ->default(10) // Contoh default 10
-                    ->label('Stok Barang'),
-                // ---------------------    
-
-                Forms\Components\Repeater::make('variants')
-                    ->relationship()
+                // Kita bungkus dalam Section biar rapi
+                Forms\Components\Section::make('Detail Produk')
+                    ->description('Isi informasi utama buah segar di sini.')
                     ->schema([
+                        
+                        // 1. INPUT NAMA PRODUK (Yang tadi hilang)
                         Forms\Components\TextInput::make('name')
-                            ->label('Satuan (Misal: 500gr, 1Kg)')
+                            ->label('Nama Produk')
+                            ->required()
+                            ->maxLength(255)
+                            // FITUR KEREN: Saat nama diketik, Slug otomatis terisi!
+                            ->live(onBlur: true) 
+                            ->afterStateUpdated(fn (string $operation, $state, Forms\Set $set) => 
+                                $operation === 'create' ? $set('slug', Str::slug($state)) : null
+                            ),
+
+                        // Input Slug (Terisi otomatis, jadi kita disable saja biar aman)
+                        Forms\Components\TextInput::make('slug')
+                            ->label('Slug URL (Otomatis)')
+                            ->disabled()
+                            ->dehydrated() // Tetap dikirim ke database meski disabled
+                            ->required()
+                            ->unique(Product::class, 'slug', ignoreRecord: true),
+
+                        // 2. UPLOAD FOTO (Perbaikan dari TextInput jadi FileUpload)
+                        Forms\Components\FileUpload::make('image')
+                            ->label('Foto Produk')
+                            ->image() // Validasi harus file gambar (jpg, png)
+                            ->directory('products') // Disimpan di folder storage/app/public/products
+                            ->visibility('public') // Agar bisa diakses dari luar
+                            ->imagePreviewHeight('250') // Tinggi preview di admin
+                            ->required()
+                            ->columnSpanFull(), // Lebar penuh
+
+                        // Kategori
+                        Forms\Components\Select::make('category_id')
+                            ->label('Kategori')
+                            ->relationship('category', 'name')
+                            ->searchable()
+                            ->preload()
                             ->required(),
+
+                        // Harga & Stok (Berdampingan)
                         Forms\Components\TextInput::make('price')
-                            ->label('Harga Varian')
+                            ->label('Harga Satuan')
+                            ->required()
                             ->numeric()
-                            ->prefix('Rp')
-                            ->required(),
-                    ])
-                    ->columnSpanFull()
-                    ->label('Varian Ukuran/Berat (Opsional)'),
+                            ->prefix('Rp'),
+                        
+                        Forms\Components\TextInput::make('stock')
+                            ->label('Stok Awal')
+                            ->required()
+                            ->numeric()
+                            ->default(999),
 
-                // Upload Gambar
-                FileUpload::make('image')
-                    ->image() // Validasi harus file gambar
-                    ->directory('products') // Disimpan di folder products
-                    ->label('Foto Produk'),
+                        // Deskripsi
+                        Forms\Components\Textarea::make('description')
+                            ->label('Deskripsi Singkat')
+                            ->rows(3)
+                            ->columnSpanFull(),
 
-                // Deskripsi
-                Textarea::make('description')
-                    ->columnSpanFull(), // Agar lebarnya full
-
-                // Stok Tersedia?
-                Toggle::make('is_available')
-                    ->label('Stok Tersedia')
-                    ->default(true),
+                    ])->columns(2), // Menggunakan layout 2 kolom
             ]);
     }
 
@@ -107,13 +98,42 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                //
+                // 1. FOTO KECIL (Biar cantik)
+                Tables\Columns\ImageColumn::make('image')
+                    ->label('Foto'),
+
+                // 2. NAMA PRODUK (Bisa dicari)
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Produk')
+                    ->sortable()
+                    ->searchable(), // <--- PENTING: Biar bisa search di admin
+
+                // 3. KATEGORI
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Kategori')
+                    ->sortable(),
+
+                // 4. HARGA (Format Rupiah)
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Harga')
+                    ->money('IDR')
+                    ->sortable(),
+
+                // 5. STOK
+                Tables\Columns\TextColumn::make('stock')
+                    ->label('Stok')
+                    ->numeric()
+                    ->sortable(),
             ])
             ->filters([
-                //
+                // Filter Kategori (Opsional, biar gampang sortir)
+                Tables\Filters\SelectFilter::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('category', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

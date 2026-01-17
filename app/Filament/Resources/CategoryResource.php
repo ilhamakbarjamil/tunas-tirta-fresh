@@ -45,13 +45,32 @@ class CategoryResource extends Resource
     {
         return $table
             ->columns([
-                //
+                // 1. NAMA KATEGORI
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Kategori')
+                    ->sortable()
+                    ->searchable(),
+
+                // 2. SLUG (Penting buat ngecek link)
+                Tables\Columns\TextColumn::make('slug')
+                    ->label('Slug URL')
+                    ->icon('heroicon-o-link')
+                    ->copyable() // Biar bisa dicopy kalau butuh
+                    ->sortable(),
+
+                // 3. JUMLAH PRODUK (Opsional: Biar tahu kategori ini ada isinya gak)
+                Tables\Columns\TextColumn::make('products_count')
+                    ->counts('products') // Menghitung relasi products
+                    ->label('Total Produk')
+                    ->badge()
+                    ->color('success'),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
