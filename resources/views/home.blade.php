@@ -92,10 +92,9 @@
     </div>
 </div>
 
-{{-- ... (Kode sebelumnya tetap ada, jangan dihapus) ... --}}
+@if($activePromo)
 
 <div id="promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center">
-    
     <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity" onclick="closePromo()"></div>
 
     <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="promo-content">
@@ -104,67 +103,40 @@
             <i class="fas fa-times"></i>
         </button>
 
-        <div class="h-48 bg-gray-100 relative">
-            <img src="https://images.unsplash.com/photo-1573246123716-6b1782bfc499?q=80&w=1965&auto=format&fit=crop" 
-                 alt="Promo Banner" 
-                 class="w-full h-full object-cover">
-            
-            <div class="absolute bottom-0 left-0 bg-primary text-white text-xs font-bold px-3 py-1 rounded-tr-lg">
-                SPECIAL OFFER
+        @if($activePromo->image)
+            <div class="h-48 bg-gray-100 relative">
+                <img src="{{ asset('storage/' . $activePromo->image) }}" 
+                     alt="{{ $activePromo->title }}" 
+                     class="w-full h-full object-cover">
             </div>
-        </div>
+        @endif
 
         <div class="p-8 text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Grand Opening Sale! 🎉</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ $activePromo->title }}</h2>
             <p class="text-gray-500 text-sm mb-6 leading-relaxed">
-                Selamat datang di <strong>Tunas Tirta Fresh</strong>. 
-                Dapatkan diskon spesial <span class="text-primary font-bold">Gratis Ongkir</span> untuk pembelian pertama Anda di wilayah Denpasar.
+                {{ $activePromo->description }}
             </p>
 
             <div class="space-y-3">
-                <button onclick="closePromo()" class="w-full bg-primary hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">
-                    Belanja Sekarang
-                </button>
+                @if($activePromo->button_link)
+                    <a href="{{ url($activePromo->button_link) }}" class="block w-full bg-primary hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">
+                        {{ $activePromo->button_text }}
+                    </a>
+                @else
+                    <button onclick="closePromo()" class="w-full bg-primary hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">
+                        {{ $activePromo->button_text }}
+                    </button>
+                @endif
+                
                 <button onclick="closePromo()" class="text-gray-400 text-xs hover:text-gray-600">
-                    Tidak, terima kasih
+                    Tutup
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Cek di memori browser: Apakah user sudah lihat promo ini?
-        const hasSeenPromo = sessionStorage.getItem('promo_seen');
-
-        if (!hasSeenPromo) {
-            // Kalau belum, munculkan popup setelah 1 detik (biar smooth)
-            setTimeout(() => {
-                const modal = document.getElementById('promo-modal');
-                const content = document.getElementById('promo-content');
-                
-                modal.classList.remove('hidden');
-                
-                // Efek animasi masuk
-                setTimeout(() => {
-                    content.classList.remove('scale-95');
-                    content.classList.add('scale-100');
-                }, 50);
-            }, 1000);
-        }
-    });
-
-    function closePromo() {
-        const modal = document.getElementById('promo-modal');
-        
-        // Sembunyikan modal
-        modal.classList.add('hidden');
-
-        // Simpan tanda di memori: "User sudah lihat, jangan munculkan lagi"
-        sessionStorage.setItem('promo_seen', 'true');
-    }
-</script>
+@endif
 @endsection
 
 <script>
@@ -182,5 +154,38 @@
 
             priceDisplay.innerText = formattedPrice;
         }
+    }
+
+    //announcment
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- MODE DEBUG / EDIT ---
+        // Kita matikan dulu pengecekan 'hasSeenPromo' biar popup muncul terus saat direfresh.
+        
+        // const hasSeenPromo = sessionStorage.getItem('promo_seen'); // <--- Baris ini kita abaikan dulu
+
+        // if (!hasSeenPromo) {  // <--- Syarat ini kita lewati dulu
+            
+            setTimeout(() => {
+                const modal = document.getElementById('promo-modal');
+                const content = document.getElementById('promo-content');
+                
+                if(modal) {
+                    modal.classList.remove('hidden');
+                    
+                    // Efek animasi masuk
+                    setTimeout(() => {
+                        content.classList.remove('scale-95');
+                        content.classList.add('scale-100');
+                    }, 50);
+                }
+            }, 1000); // Muncul setelah 1 detik
+
+        // } // <--- Tutup kurung if juga dimatikan
+    });
+
+    function closePromo() {
+        const modal = document.getElementById('promo-modal');
+        modal.classList.add('hidden');
+        // sessionStorage.setItem('promo_seen', 'true'); // <--- Jangan simpan ingatan dulu
     }
 </script>
