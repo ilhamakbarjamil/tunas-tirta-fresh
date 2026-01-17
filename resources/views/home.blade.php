@@ -91,6 +91,80 @@
         @endforeach
     </div>
 </div>
+
+{{-- ... (Kode sebelumnya tetap ada, jangan dihapus) ... --}}
+
+<div id="promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center">
+    
+    <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity" onclick="closePromo()"></div>
+
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="promo-content">
+        
+        <button onclick="closePromo()" class="absolute top-4 right-4 z-10 bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="h-48 bg-gray-100 relative">
+            <img src="https://images.unsplash.com/photo-1573246123716-6b1782bfc499?q=80&w=1965&auto=format&fit=crop" 
+                 alt="Promo Banner" 
+                 class="w-full h-full object-cover">
+            
+            <div class="absolute bottom-0 left-0 bg-primary text-white text-xs font-bold px-3 py-1 rounded-tr-lg">
+                SPECIAL OFFER
+            </div>
+        </div>
+
+        <div class="p-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Grand Opening Sale! 🎉</h2>
+            <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                Selamat datang di <strong>Tunas Tirta Fresh</strong>. 
+                Dapatkan diskon spesial <span class="text-primary font-bold">Gratis Ongkir</span> untuk pembelian pertama Anda di wilayah Denpasar.
+            </p>
+
+            <div class="space-y-3">
+                <button onclick="closePromo()" class="w-full bg-primary hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">
+                    Belanja Sekarang
+                </button>
+                <button onclick="closePromo()" class="text-gray-400 text-xs hover:text-gray-600">
+                    Tidak, terima kasih
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Cek di memori browser: Apakah user sudah lihat promo ini?
+        const hasSeenPromo = sessionStorage.getItem('promo_seen');
+
+        if (!hasSeenPromo) {
+            // Kalau belum, munculkan popup setelah 1 detik (biar smooth)
+            setTimeout(() => {
+                const modal = document.getElementById('promo-modal');
+                const content = document.getElementById('promo-content');
+                
+                modal.classList.remove('hidden');
+                
+                // Efek animasi masuk
+                setTimeout(() => {
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 50);
+            }, 1000);
+        }
+    });
+
+    function closePromo() {
+        const modal = document.getElementById('promo-modal');
+        
+        // Sembunyikan modal
+        modal.classList.add('hidden');
+
+        // Simpan tanda di memori: "User sudah lihat, jangan munculkan lagi"
+        sessionStorage.setItem('promo_seen', 'true');
+    }
+</script>
 @endsection
 
 <script>
