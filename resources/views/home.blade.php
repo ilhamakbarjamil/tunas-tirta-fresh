@@ -93,50 +93,91 @@
 </div>
 
 @if($activePromo)
+<div id="promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+    
+    <div class="absolute inset-0 bg-gray-900 bg-opacity-80 transition-opacity backdrop-blur-sm" onclick="closePromo()"></div>
 
-<div id="promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center">
-    <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity" onclick="closePromo()"></div>
-
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="promo-content">
+    <div class="relative bg-white w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform scale-95 transition-all duration-300" id="promo-content">
         
-        <button onclick="closePromo()" class="absolute top-4 right-4 z-10 bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition">
-            <i class="fas fa-times"></i>
+        <button onclick="closePromo()" class="absolute top-4 right-4 z-20 bg-white text-gray-800 hover:bg-red-500 hover:text-white w-10 h-10 flex items-center justify-center transition border border-gray-200 shadow-sm">
+            <i class="fas fa-times text-lg"></i>
         </button>
 
-        @if($activePromo->image)
-            <div class="h-48 bg-gray-100 relative">
+        <div class="w-full md:w-1/2 relative bg-gray-100 min-h-[250px] md:min-h-[400px]">
+            @if($activePromo->image)
                 <img src="{{ asset('storage/' . $activePromo->image) }}" 
                      alt="{{ $activePromo->title }}" 
-                     class="w-full h-full object-cover">
-            </div>
-        @endif
+                     class="absolute inset-0 w-full h-full object-cover">
+                
+                <div class="absolute top-0 left-0 bg-primary text-white font-bold px-6 py-2 text-xs uppercase tracking-widest shadow-lg">
+                    Limited Offer
+                </div>
+            @else
+                <div class="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-400">
+                    <i class="fas fa-image text-4xl"></i>
+                </div>
+            @endif
+        </div>
 
-        <div class="p-8 text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ $activePromo->title }}</h2>
-            <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+        <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center text-left bg-white relative">
+            
+            <span class="text-primary font-bold tracking-[0.2em] uppercase text-xs mb-3 block">
+                Official Announcement
+            </span>
+
+            <h2 class="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-4 uppercase">
+                {{ $activePromo->title }}
+            </h2>
+
+            <div class="w-20 h-1.5 bg-primary mb-6"></div>
+
+            <p class="text-gray-600 text-sm md:text-base leading-relaxed mb-8">
                 {{ $activePromo->description }}
             </p>
 
-            <div class="space-y-3">
+            <div class="mt-auto">
                 @if($activePromo->button_link)
-                    <a href="{{ url($activePromo->button_link) }}" class="block w-full bg-primary hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">
-                        {{ $activePromo->button_text }}
+                    <a href="{{ url($activePromo->button_link) }}" class="block w-full bg-gray-900 hover:bg-primary text-white text-center font-bold py-4 uppercase tracking-wider transition-colors duration-300">
+                        {{ $activePromo->button_text }} &nbsp; <i class="fas fa-arrow-right ml-2"></i>
                     </a>
                 @else
-                    <button onclick="closePromo()" class="w-full bg-primary hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">
+                    <button onclick="closePromo()" class="block w-full bg-gray-900 hover:bg-primary text-white text-center font-bold py-4 uppercase tracking-wider transition-colors duration-300">
                         {{ $activePromo->button_text }}
                     </button>
                 @endif
                 
-                <button onclick="closePromo()" class="text-gray-400 text-xs hover:text-gray-600">
-                    Tutup
+                <button onclick="closePromo()" class="block w-full text-center text-gray-400 text-xs font-medium mt-4 hover:text-gray-600 underline">
+                    Tutup / Abaikan
                 </button>
             </div>
         </div>
     </div>
 </div>
-
 @endif
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(() => {
+            const modal = document.getElementById('promo-modal');
+            const content = document.getElementById('promo-content');
+            
+            if(modal) {
+                modal.classList.remove('hidden');
+                
+                // Efek animasi Zoom In (Tegas)
+                setTimeout(() => {
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 50);
+            }
+        }, 500); // Muncul cepat (0.5 detik)
+    });
+
+    function closePromo() {
+        const modal = document.getElementById('promo-modal');
+        if(modal) modal.classList.add('hidden');
+    }
+</script>
 @endsection
 
 <script>
@@ -154,38 +195,5 @@
 
             priceDisplay.innerText = formattedPrice;
         }
-    }
-
-    //announcment
-    document.addEventListener("DOMContentLoaded", function() {
-        // --- MODE DEBUG / EDIT ---
-        // Kita matikan dulu pengecekan 'hasSeenPromo' biar popup muncul terus saat direfresh.
-        
-        // const hasSeenPromo = sessionStorage.getItem('promo_seen'); // <--- Baris ini kita abaikan dulu
-
-        // if (!hasSeenPromo) {  // <--- Syarat ini kita lewati dulu
-            
-            setTimeout(() => {
-                const modal = document.getElementById('promo-modal');
-                const content = document.getElementById('promo-content');
-                
-                if(modal) {
-                    modal.classList.remove('hidden');
-                    
-                    // Efek animasi masuk
-                    setTimeout(() => {
-                        content.classList.remove('scale-95');
-                        content.classList.add('scale-100');
-                    }, 50);
-                }
-            }, 1000); // Muncul setelah 1 detik
-
-        // } // <--- Tutup kurung if juga dimatikan
-    });
-
-    function closePromo() {
-        const modal = document.getElementById('promo-modal');
-        modal.classList.add('hidden');
-        // sessionStorage.setItem('promo_seen', 'true'); // <--- Jangan simpan ingatan dulu
     }
 </script>
