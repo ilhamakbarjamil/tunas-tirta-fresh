@@ -270,67 +270,127 @@
         @yield('content')
     </main>
 
-    <footer class="bg-white border-t border-border py-6">
+    <footer class="bg-white border-t border-border py-8">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 
-                <div>
-                    <div class="flex items-center space-x-2 mb-3">
-                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <div class="pr-4">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shadow-sm">
                             <span class="text-white font-bold text-sm">TTF</span>
                         </div>
-                        <h4 class="text-dark font-bold text-sm">Tunas Tirta Fresh</h4>
+                        <h4 class="text-dark font-bold text-base">Tunas Tirta Fresh</h4>
                     </div>
-                    <p class="text-medium text-xs leading-relaxed">
-                        Supplier buah segar terpercaya di Bali sejak 2010.
+                    <p class="text-medium text-xs leading-relaxed text-justify">
+                        Mitra terpercaya suplai buah segar dan kebutuhan pangan di Bali. Kami menjamin kualitas dan kesegaran produk hingga ke tangan Anda.
                     </p>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-dark text-sm mb-3">Kontak</h4>
-                    <ul class="space-y-2 text-medium text-xs">
+                    <h4 class="font-bold text-dark text-sm mb-4 uppercase tracking-wider">Kontak Kami</h4>
+                    <ul class="space-y-3 text-medium text-xs">
                         <li class="flex items-start">
-                            <i class="fas fa-map-marker-alt text-primary mt-0.5 mr-2 text-xs"></i>
-                            <span>Jl. Cargo Sari III, Denpasar, Bali</span>
+                            <div class="w-5 flex-shrink-0 text-center">
+                                <i class="fas fa-map-marker-alt text-primary"></i>
+                            </div>
+                            <span class="leading-tight">Jl. Cargo Sari III, Ubung Kaja, Denpasar Utara, Bali</span>
                         </li>
                         <li class="flex items-center">
-                            <i class="fas fa-phone text-primary mr-2 text-xs"></i>
+                            <div class="w-5 flex-shrink-0 text-center">
+                                <i class="fas fa-phone text-primary"></i>
+                            </div>
                             <span>(0361) 123-4567</span>
                         </li>
                         <li class="flex items-center">
-                            <i class="fas fa-envelope text-primary mr-2 text-xs"></i>
-                            <span>info@tunastirtafresh.com</span>
+                            <div class="w-5 flex-shrink-0 text-center">
+                                <i class="fab fa-whatsapp text-primary text-sm"></i>
+                            </div>
+                            <span>+62 812-3456-7890</span>
                         </li>
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-dark text-sm mb-3">Sosial Media</h4>
-                    <div class="flex space-x-2">
-                        <a href="#" class="w-8 h-8 border border-border rounded-lg flex items-center justify-center text-medium hover:text-primary hover:border-primary transition-colors">
-                            <i class="fab fa-instagram text-sm"></i>
+                    <h4 class="font-bold text-dark text-sm mb-4 uppercase tracking-wider">Ikuti Kami</h4>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-primary hover:text-white hover:border-primary transition-all duration-300">
+                            <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#" class="w-8 h-8 border border-border rounded-lg flex items-center justify-center text-medium hover:text-primary hover:border-primary transition-colors">
-                            <i class="fab fa-facebook-f text-sm"></i>
+                        <a href="#" class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-300">
+                            <i class="fab fa-facebook-f"></i>
                         </a>
-                        <a href="#" class="w-8 h-8 border border-border rounded-lg flex items-center justify-center text-medium hover:text-primary hover:border-border transition-colors">
-                            <i class="fab fa-whatsapp text-sm"></i>
+                        <a href="#" class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-300">
+                            <i class="fab fa-tiktok"></i>
                         </a>
                     </div>
                 </div>
+
+                <div>
+                    <h4 class="font-bold text-dark text-sm mb-4 uppercase tracking-wider">Metode Pembayaran</h4>
+                    <div class="flex flex-wrap gap-2">
+                        
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BCA">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/2560px-Bank_Central_Asia.svg.png" alt="BCA" class="h-3.5 w-auto object-contain">
+                        </div>
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="Mandiri">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/2560px-Bank_Mandiri_logo_2016.svg.png" alt="Mandiri" class="h-3.5 w-auto object-contain">
+                        </div>
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BRI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/2560px-BANK_BRI_logo.svg.png" alt="BRI" class="h-3.5 w-auto object-contain">
+                        </div>
+                        <!-- <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BNI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Negara_Indonesia_logo.svg/2560px-Bank_Negara_Indonesia_logo.svg.png" alt="BNI" class="h-3.5 w-auto object-contain">
+                        </div> -->
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BSI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Bank_Syariah_Indonesia.svg/2560px-Bank_Syariah_Indonesia.svg.png" alt="BSI" class="h-3.5 w-auto object-contain">
+                        </div>
+
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="QRIS">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/2560px-Logo_QRIS.svg.png" alt="QRIS" class="h-4 w-auto object-contain">
+                        </div>
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="GoPay">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Gopay_logo.svg/2560px-Gopay_logo.svg.png" alt="GoPay" class="h-3.5 w-auto object-contain">
+                        </div>
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="DANA">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Logo_dana_blue.svg/2560px-Logo_dana_blue.svg.png" alt="DANA" class="h-3.5 w-auto object-contain">
+                        </div>
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="LinkAja">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/LinkAja.svg/2560px-LinkAja.svg.png" alt="LinkAja" class="h-4 w-auto object-contain">
+                        </div>
+
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="Indomaret">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Logo_Indomaret.png/1200px-Logo_Indomaret.png" alt="Indomaret" class="h-3.5 w-auto object-contain">
+                        </div>
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="Alfamart">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Alfamart_logo.svg/2560px-Alfamart_logo.svg.png" alt="Alfamart" class="h-3.5 w-auto object-contain">
+                        </div>
+
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center text-medium" title="Bank Lainnya">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fas fa-university text-[10px] mb-[1px]"></i>
+                                <span class="text-[8px] font-bold leading-none">Other</span>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div class="mt-3 flex items-center text-medium text-[10px]">
+                        <i class="fas fa-shield-alt mr-1.5 text-primary"></i>
+                        <span>Pembayaran 100% Aman & Terenkripsi</span>
+                    </div>
+                </div>
+
             </div>
             
-            <div class="border-t border-border pt-4">
-                <div class="text-center">
-                    <p class="text-medium text-xs">
-                        &copy; {{ date('Y') }} PT. Alam Tunas Tirta
+            <div class="border-t border-border pt-6 mt-2">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p class="text-medium text-xs text-center md:text-left">
+                        &copy; {{ date('Y') }} <strong>PT. Alam Tunas Tirta</strong>. All rights reserved.
                     </p>
-                    <div class="flex justify-center space-x-3 mt-2 text-xs text-medium">
-                        <a href="#" class="hover:text-dark">Syarat</a>
-                        <span>•</span>
-                        <a href="#" class="hover:text-dark">Privasi</a>
-                        <span>•</span>
-                        <a href="#" class="hover:text-dark">FAQ</a>
+                    <div class="flex space-x-4 text-xs text-medium">
+                        <a href="#" class="hover:text-primary transition-colors">Syarat & Ketentuan</a>
+                        <a href="#" class="hover:text-primary transition-colors">Kebijakan Privasi</a>
+                        <a href="#" class="hover:text-primary transition-colors">Pusat Bantuan</a>
                     </div>
                 </div>
             </div>
