@@ -27,11 +27,17 @@
             <div class="md:col-span-4">
                 <div class="sticky top-10">
                     <div class="flex items-center gap-4 mb-8">
-                        <div class="p-4 bg-gray-900 text-white inline-block">
-                            <i class="fas fa-leaf text-3xl"></i>
+                        
+                        <div class="w-20 h-20 flex-shrink-0 bg-white border border-gray-100 rounded-lg shadow-sm flex items-center justify-center p-2 overflow-hidden">
+                            <img src="{{ asset('images/logo.png') }}" 
+                                 alt="Logo PT Alam Tunas Tirta" 
+                                 class="w-full h-full object-contain">
                         </div>
+
                         <div>
-                            <h3 class="font-bold text-lg uppercase leading-none">PT. Alam <br>Tunas Tirta</h3>
+                            <h3 class="font-bold text-lg uppercase leading-tight text-gray-800">
+                                PT. Alam <br>Tunas Tirta
+                            </h3>
                         </div>
                     </div>
 

@@ -8,7 +8,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -64,31 +65,38 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        
+
         /* Instagram-like scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
-        
+
         /* Instagram-style animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         .fade-in {
             animation: fadeIn 0.3s ease-out;
         }
@@ -104,7 +112,8 @@
             </div>
             <div class="flex items-center space-x-4">
                 @auth
-                    <a href="{{ route('orders.index') }}" class="text-sm text-medium hover:text-dark font-medium">Pesanan</a>
+                    <a href="{{ route('orders.index') }}"
+                        class="text-sm text-medium hover:text-dark font-medium">Pesanan</a>
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit" class="text-sm text-medium hover:text-dark font-medium">
@@ -121,10 +130,13 @@
     <header class="bg-white border-b border-border py-3">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between">
-                
+
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-sm">TTF</span>
+                    <div class="flex-shrink-0 flex items-center justify-center md:justify-start">
+                        <a href="{{ route('home') }}">
+                            <img src="{{ asset('images/logo.png') }}" alt="Tunas Tirta Fresh"
+                                class="h-12 md:h-16 w-auto object-contain">
+                        </a>
                     </div>
                     <div>
                         <h1 class="text-lg font-bold text-dark leading-tight">Tunas Tirta Fresh</h1>
@@ -135,14 +147,10 @@
                 <div class="flex-1 max-w-md mx-4">
                     <form action="{{ route('home') }}" method="GET" class="relative">
                         <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-medium text-sm"></i>
-                            <input 
-                                type="text" 
-                                name="search" 
-                                value="{{ request('search') }}"
-                                placeholder="Cari buah..."
-                                class="w-full pl-10 pr-4 py-2 border border-border bg-light rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none"
-                            >
+                            <i
+                                class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-medium text-sm"></i>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari buah..."
+                                class="w-full pl-10 pr-4 py-2 border border-border bg-light rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none">
                         </div>
                     </form>
                 </div>
@@ -159,7 +167,8 @@
                         </div>
                         @auth
                             @if(Auth::user()->carts()->count() > 0)
-                                <span class="absolute -top-2 -right-2 bg-secondary text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                <span
+                                    class="absolute -top-2 -right-2 bg-secondary text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                                     {{ Auth::user()->carts()->count() }}
                                 </span>
                             @endif
@@ -174,33 +183,33 @@
         <div class="container mx-auto px-4">
             <div class="flex overflow-x-auto hide-scrollbar">
                 <div class="flex space-x-1 py-2">
-                    <a href="{{ route('home') }}" 
-                       class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap {{ request()->routeIs('home') ? 'text-primary bg-highlight' : 'text-medium hover:text-dark' }}">
+                    <a href="{{ route('home') }}"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap {{ request()->routeIs('home') ? 'text-primary bg-highlight' : 'text-medium hover:text-dark' }}">
                         Beranda
                     </a>
-                    
-                    <a href="{{ url('/category/fresh-fruits') }}" 
-                       class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
+
+                    <a href="{{ url('/category/fresh-fruits') }}"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
                         Buah Segar
                     </a>
-                    
-                    <a href="{{ url('/category/frozen-fruits') }}" 
-                       class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
+
+                    <a href="{{ url('/category/frozen-fruits') }}"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
                         Buah Beku
                     </a>
-                    
-                    <a href="{{ url('/category/fresh-drinks') }}" 
-                       class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
+
+                    <a href="{{ url('/category/fresh-drinks') }}"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
                         Jus Segar
                     </a>
-                    
-                    <a href="{{ url('/category/packages') }}" 
-                       class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
+
+                    <a href="{{ url('/category/packages') }}"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
                         Paket
                     </a>
-                    
-                    <a href="{{ route('about') }}" 
-                       class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
+
+                    <a href="{{ route('about') }}"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap hover:text-dark">
                         Tentang
                     </a>
                 </div>
@@ -210,12 +219,14 @@
 
     <main class="min-h-screen py-4 fade-in">
         @if(session('success') || session('error'))
-            <div id="toast-notification" 
-                 class="fixed top-20 right-4 z-[100] transform transition-all duration-300 translate-x-full opacity-0">
-                
-                <div class="bg-white border border-border rounded-lg shadow-strong p-3 flex items-center gap-3 min-w-[300px] max-w-[350px]">
-                    
-                    <div class="{{ session('error') ? 'bg-red-50 text-red-500' : 'bg-highlight text-primary' }} p-2 rounded-md">
+            <div id="toast-notification"
+                class="fixed top-20 right-4 z-[100] transform transition-all duration-300 translate-x-full opacity-0">
+
+                <div
+                    class="bg-white border border-border rounded-lg shadow-strong p-3 flex items-center gap-3 min-w-[300px] max-w-[350px]">
+
+                    <div
+                        class="{{ session('error') ? 'bg-red-50 text-red-500' : 'bg-highlight text-primary' }} p-2 rounded-md">
                         <i class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check' }} text-sm"></i>
                     </div>
 
@@ -228,18 +239,17 @@
                         </p>
                     </div>
 
-                    <button onclick="closeToast()" 
-                            class="text-medium hover:text-dark transition-colors">
+                    <button onclick="closeToast()" class="text-medium hover:text-dark transition-colors">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
 
             <script>
-                document.addEventListener("DOMContentLoaded", function() {
+                document.addEventListener("DOMContentLoaded", function () {
                     const toast = document.getElementById('toast-notification');
-                    
-                    if(toast) {
+
+                    if (toast) {
                         setTimeout(() => {
                             toast.classList.remove('translate-x-full', 'opacity-0');
                             toast.classList.add('translate-x-0', 'opacity-100');
@@ -253,13 +263,13 @@
 
                 function closeToast() {
                     const toast = document.getElementById('toast-notification');
-                    if(toast) {
+                    if (toast) {
                         toast.classList.remove('translate-x-0', 'opacity-100');
                         toast.classList.add('translate-x-full', 'opacity-0');
-                        
-                        setTimeout(() => { 
-                            if(toast.parentNode) {
-                                toast.remove(); 
+
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.remove();
                             }
                         }, 300);
                     }
@@ -273,16 +283,20 @@
     <footer class="bg-white border-t border-border py-8">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                
+
                 <div class="pr-4">
                     <div class="flex items-center space-x-2 mb-4">
-                        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-                            <span class="text-white font-bold text-sm">TTF</span>
-                        </div>
+                         <div class="flex-shrink-0 flex items-center justify-center md:justify-start">
+                        <a href="{{ route('home') }}">
+                            <img src="{{ asset('images/logo.png') }}" alt="Tunas Tirta Fresh"
+                                class="h-12 md:h-16 w-auto object-contain">
+                        </a>
+                    </div>
                         <h4 class="text-dark font-bold text-base">Tunas Tirta Fresh</h4>
                     </div>
                     <p class="text-medium text-xs leading-relaxed text-justify">
-                        Mitra terpercaya suplai buah segar dan kebutuhan pangan di Bali. Kami menjamin kualitas dan kesegaran produk hingga ke tangan Anda.
+                        Mitra terpercaya suplai buah segar dan kebutuhan pangan di Bali. Kami menjamin kualitas dan
+                        kesegaran produk hingga ke tangan Anda.
                     </p>
                 </div>
 
@@ -313,13 +327,16 @@
                 <div>
                     <h4 class="font-bold text-dark text-sm mb-4 uppercase tracking-wider">Ikuti Kami</h4>
                     <div class="flex gap-3">
-                        <a href="#" class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-primary hover:text-white hover:border-primary transition-all duration-300">
+                        <a href="#"
+                            class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-primary hover:text-white hover:border-primary transition-all duration-300">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#" class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-300">
+                        <a href="#"
+                            class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-300">
                             <i class="fab fa-facebook-f"></i>
                         </a>
-                        <a href="#" class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-300">
+                        <a href="#"
+                            class="w-9 h-9 border border-border rounded-lg flex items-center justify-center text-medium hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-300">
                             <i class="fab fa-tiktok"></i>
                         </a>
                     </div>
@@ -328,44 +345,65 @@
                 <div>
                     <h4 class="font-bold text-dark text-sm mb-4 uppercase tracking-wider">Metode Pembayaran</h4>
                     <div class="flex flex-wrap gap-2">
-                        
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BCA">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/2560px-Bank_Central_Asia.svg.png" alt="BCA" class="h-3.5 w-auto object-contain">
+
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="BCA">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/2560px-Bank_Central_Asia.svg.png"
+                                alt="BCA" class="h-3.5 w-auto object-contain">
                         </div>
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="Mandiri">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/2560px-Bank_Mandiri_logo_2016.svg.png" alt="Mandiri" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="Mandiri">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/2560px-Bank_Mandiri_logo_2016.svg.png"
+                                alt="Mandiri" class="h-3.5 w-auto object-contain">
                         </div>
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BRI">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/2560px-BANK_BRI_logo.svg.png" alt="BRI" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="BRI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/2560px-BANK_BRI_logo.svg.png"
+                                alt="BRI" class="h-3.5 w-auto object-contain">
                         </div>
                         <!-- <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BNI">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Negara_Indonesia_logo.svg/2560px-Bank_Negara_Indonesia_logo.svg.png" alt="BNI" class="h-3.5 w-auto object-contain">
                         </div> -->
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="BSI">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Bank_Syariah_Indonesia.svg/2560px-Bank_Syariah_Indonesia.svg.png" alt="BSI" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="BSI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Bank_Syariah_Indonesia.svg/2560px-Bank_Syariah_Indonesia.svg.png"
+                                alt="BSI" class="h-3.5 w-auto object-contain">
                         </div>
 
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="QRIS">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/2560px-Logo_QRIS.svg.png" alt="QRIS" class="h-4 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="QRIS">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/2560px-Logo_QRIS.svg.png"
+                                alt="QRIS" class="h-4 w-auto object-contain">
                         </div>
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="GoPay">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Gopay_logo.svg/2560px-Gopay_logo.svg.png" alt="GoPay" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="GoPay">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Gopay_logo.svg/2560px-Gopay_logo.svg.png"
+                                alt="GoPay" class="h-3.5 w-auto object-contain">
                         </div>
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="DANA">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Logo_dana_blue.svg/2560px-Logo_dana_blue.svg.png" alt="DANA" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="DANA">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Logo_dana_blue.svg/2560px-Logo_dana_blue.svg.png"
+                                alt="DANA" class="h-3.5 w-auto object-contain">
                         </div>
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="LinkAja">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/LinkAja.svg/2560px-LinkAja.svg.png" alt="LinkAja" class="h-4 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="LinkAja">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/LinkAja.svg/2560px-LinkAja.svg.png"
+                                alt="LinkAja" class="h-4 w-auto object-contain">
                         </div>
 
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="Indomaret">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Logo_Indomaret.png/1200px-Logo_Indomaret.png" alt="Indomaret" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="Indomaret">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Logo_Indomaret.png/1200px-Logo_Indomaret.png"
+                                alt="Indomaret" class="h-3.5 w-auto object-contain">
                         </div>
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center" title="Alfamart">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Alfamart_logo.svg/2560px-Alfamart_logo.svg.png" alt="Alfamart" class="h-3.5 w-auto object-contain">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center"
+                            title="Alfamart">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Alfamart_logo.svg/2560px-Alfamart_logo.svg.png"
+                                alt="Alfamart" class="h-3.5 w-auto object-contain">
                         </div>
 
-                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center text-medium" title="Bank Lainnya">
+                        <div class="bg-white border border-border rounded p-1 h-8 w-[52px] flex items-center justify-center text-medium"
+                            title="Bank Lainnya">
                             <div class="flex flex-col items-center justify-center">
                                 <i class="fas fa-university text-[10px] mb-[1px]"></i>
                                 <span class="text-[8px] font-bold leading-none">Other</span>
@@ -373,7 +411,7 @@
                         </div>
 
                     </div>
-                    
+
                     <div class="mt-3 flex items-center text-medium text-[10px]">
                         <i class="fas fa-shield-alt mr-1.5 text-primary"></i>
                         <span>Pembayaran 100% Aman & Terenkripsi</span>
@@ -381,7 +419,7 @@
                 </div>
 
             </div>
-            
+
             <div class="border-t border-border pt-6 mt-2">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <p class="text-medium text-xs text-center md:text-left">
@@ -434,8 +472,7 @@
 
                             <div class="flex gap-3 p-3 border border-border rounded-lg">
                                 <div class="w-14 h-14 bg-light rounded-md flex-shrink-0 overflow-hidden">
-                                    <img src="{{ asset('storage/' . $item->product->image) }}"
-                                        class="w-full h-full object-cover">
+                                    <img src="{{ asset('storage/' . $item->product->image) }}" class="w-full h-full object-cover">
                                 </div>
 
                                 <div class="flex-1 min-w-0">
@@ -452,9 +489,11 @@
                                     <p class="text-primary font-bold text-sm mt-1">Rp {{ number_format($price, 0, ',', '.') }}</p>
                                     <div class="flex justify-between items-center mt-2">
                                         <div class="flex items-center space-x-2">
-                                            <button class="w-6 h-6 border border-border rounded text-xs flex items-center justify-center hover:bg-light">−</button>
+                                            <button
+                                                class="w-6 h-6 border border-border rounded text-xs flex items-center justify-center hover:bg-light">−</button>
                                             <span class="font-medium text-sm">{{ $item->quantity }}</span>
-                                            <button class="w-6 h-6 border border-border rounded text-xs flex items-center justify-center hover:bg-light">+</button>
+                                            <button
+                                                class="w-6 h-6 border border-border rounded text-xs flex items-center justify-center hover:bg-light">+</button>
                                         </div>
                                         <p class="font-bold text-dark text-sm">Rp {{ number_format($subtotal, 0, ',', '.') }}</p>
                                     </div>
@@ -478,7 +517,8 @@
                     </div>
                     <p class="text-medium font-medium text-sm">Login diperlukan</p>
                     <p class="text-medium text-xs mt-1">Silakan login untuk melihat keranjang</p>
-                    <a href="{{ route('login') }}" class="inline-block mt-3 bg-primary text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-green-600">
+                    <a href="{{ route('login') }}"
+                        class="inline-block mt-3 bg-primary text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-green-600">
                         Masuk
                     </a>
                 </div>
@@ -498,7 +538,7 @@
                             <span>Rp {{ number_format($sideTotal, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    
+
                     <div class="space-y-2">
                         <a href="{{ route('cart.index') }}"
                             class="block w-full bg-primary text-white text-center text-sm font-medium py-2.5 rounded-lg hover:bg-green-600">
@@ -531,16 +571,16 @@
         }
 
         @if (session('show_cart'))
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 setTimeout(toggleCart, 300);
             });
         @endif
-        
-        document.addEventListener('keydown', function(e) {
+
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 const sidebar = document.getElementById('cart-sidebar');
                 const overlay = document.getElementById('cart-overlay');
-                
+
                 if (!sidebar.classList.contains('translate-x-full')) {
                     toggleCart();
                 }

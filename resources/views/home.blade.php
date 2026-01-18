@@ -8,9 +8,6 @@
             <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Produk Pilihan</h2>
             <p class="text-gray-600 font-medium mt-1">Langsung dari kebun petani lokal.</p>
         </div>
-        <div class="hidden md:block w-16 h-16 bg-green-50 rounded-lg flex items-center justify-center border border-green-100">
-            <i class="fas fa-leaf text-2xl text-primary"></i>
-        </div>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
