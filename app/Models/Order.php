@@ -19,6 +19,8 @@ class Order extends Model
         'external_id',
         'address',
         'note',
+        'shipping_courier',
+        'shipping_tracking'
     ];
 
     // Relasi: Order milik 1 User

@@ -129,6 +129,7 @@
                         <div class="mb-6">
                             <a href="#" class="text-sm text-gray-500 underline hover:text-primary">Have a promo code?</a>
                         </div>
+                        
 
                         <form action="{{ route('checkout.process') }}" method="POST">
                             @csrf
