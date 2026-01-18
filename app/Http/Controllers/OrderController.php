@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;        // <--- Wajib Import ini
+// use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // <--- Wajib Import ini (Buat Transaksi)
@@ -19,6 +20,7 @@ class OrderController extends Controller
                         ->with(['items.product', 'items.variant'])
                         ->orderBy('created_at', 'desc')
                         ->get();
+
 
         // 2. Cek Status Pembayaran ke Xendit
         Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
