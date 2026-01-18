@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
 {
     Schema::table('orders', function (Blueprint $table) {
-        $table->string('shipping_courier')->nullable()->after('total_price'); // JNE, GoSend, dll
+        $table->string('shipping_courier')->nullable()->after('note'); // JNE, GoSend, dll
         $table->string('shipping_tracking')->nullable()->after('shipping_courier'); // No Resi / Link
     });
 }

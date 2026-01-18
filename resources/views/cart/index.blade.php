@@ -129,23 +129,57 @@
                         <div class="mb-6">
                             <a href="#" class="text-sm text-gray-500 underline hover:text-primary">Have a promo code?</a>
                         </div>
-                        
 
-                        <form action="{{ route('checkout.process') }}" method="POST">
+
+                        <form action="{{ route('checkout.process') }}" method="POST"
+                            class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             @csrf
 
+                            <h3 class="font-bold text-lg mb-4 text-dark border-b pb-2">Data Pengiriman</h3>
+
                             <div class="mb-4">
-                                <label>Alamat Lengkap</label>
-                                <textarea name="address" required class="w-full border p-2 rounded"></textarea>
+                                <label class="block font-bold text-sm text-gray-600 mb-2">Alamat Lengkap</label>
+                                <textarea name="address" required
+                                    class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                    rows="3" placeholder="Jalan, No Rumah, Patokan..."></textarea>
                             </div>
 
                             <div class="mb-4">
-                                <label>Catatan (Opsional)</label>
-                                <input type="text" name="note" class="w-full border p-2 rounded">
+                                <label class="block font-bold text-sm text-gray-600 mb-2">Metode Pengiriman</label>
+                                <div class="relative">
+                                    <select name="shipping_courier"
+                                        class="w-full border border-gray-300 p-3 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer">
+                                        <option value="Kurir Toko (Bayar Ongkir di Tempat)">🛵 Kurir Toko (Ongkir Bayar di
+                                            Tempat)</option>
+                                        <option value="GoSend/Grab (Bayar di Tempat)">🟢 GoSend/Grab Instant (Ongkir Bayar di
+                                            Tempat)</option>
+                                        <option value="Ambil Sendiri (Gratis)">🏪 Ambil Sendiri di Toko (Gratis)</option>
+                                        <option value="Ekspedisi (Menyesuaikan)">📦 Ekspedisi Luar Kota (Ongkir Transfer Manual)
+                                        </option>
+                                    </select>
+                                    <div
+                                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                        <i class="fas fa-chevron-down text-xs"></i>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-gray-500 mt-2 bg-gray-50 p-2 rounded border border-gray-200">
+                                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                                    Total bayar di Xendit <b>HANYA harga produk</b>. Ongkos kirim ditanggung pembeli saat barang
+                                    sampai.
+                                </p>
                             </div>
 
-                            <button type="submit" class="bg-primary text-white font-bold py-3 px-6 w-full rounded">
-                                BAYAR SEKARANG
+                            <div class="mb-6">
+                                <label class="block font-bold text-sm text-gray-600 mb-2">Catatan (Opsional)</label>
+                                <input type="text" name="note"
+                                    class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    placeholder="Pagar hitam, jangan dibanting...">
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-primary hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 transition transform hover:scale-[1.02] flex justify-center items-center gap-2">
+                                <span>LANJUT KE PEMBAYARAN</span>
+                                <i class="fas fa-arrow-right"></i>
                             </button>
                         </form>
 

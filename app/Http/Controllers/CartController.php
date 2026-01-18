@@ -24,13 +24,13 @@ class CartController extends Controller
         }
 
         $user = Auth::user();
-        $variantId = $request->input('variant_id'); 
+        $variantId = $request->input('variant_id');
 
         // ... (LOGIKA CEK CART LAMA TETAP SAMA, TIDAK BERUBAH) ...
         $existingCart = \App\Models\Cart::where('user_id', $user->id)
-                            ->where('product_id', $productId)
-                            ->where('product_variant_id', $variantId)
-                            ->first();
+            ->where('product_id', $productId)
+            ->where('product_variant_id', $variantId)
+            ->first();
 
         if ($existingCart) {
             $existingCart->increment('quantity', $request->input('quantity', 1));
@@ -74,20 +74,23 @@ class CartController extends Controller
         }
 
         // 2. Buat ID Unik Xendit
-        $externalId = 'ORDER-' . time() . '-' . Str::random(5); 
-        
+        $externalId = 'ORDER-' . time() . '-' . Str::random(5);
+
         // 3. Simpan Order ke Database (Plus Alamat & Catatan)
         $order = \App\Models\Order::create([
             'user_id' => $user->id,
             'status' => 'pending',
-            'total_price' => 0, 
+            'total_price' => 0,
             'external_id' => $externalId,
-            'address' => $request->address, // <--- Ambil dari form
-            'note' => $request->note,       // <--- Ambil dari form
+
+            // DATA DARI FORM
+            'address' => $request->address,
+            'note' => $request->note,
+            'shipping_courier' => $request->shipping_courier, // <--- INI PENTING
         ]);
 
         $totalOrder = 0;
-        $itemsForXendit = []; 
+        $itemsForXendit = [];
 
         // 4. Pindahkan Keranjang ke Order Items
         foreach ($carts as $cart) {
@@ -131,7 +134,7 @@ class CartController extends Controller
             'external_id' => $externalId,
             'amount' => $totalOrder,
             'description' => 'Tagihan Order #' . $order->id,
-            'invoice_duration' => 86400, 
+            'invoice_duration' => 86400,
             'customer' => [
                 'given_names' => $user->name,
                 'email' => $user->email,
@@ -152,7 +155,7 @@ class CartController extends Controller
 
         try {
             $result = $apiInstance->createInvoice($create_invoice_request);
-            
+
             $order->update(['payment_url' => $result['invoice_url']]);
             $user->carts()->delete();
 
@@ -166,7 +169,7 @@ class CartController extends Controller
     public function decrease($id)
     {
         $cart = \App\Models\Cart::find($id);
-        
+
         if ($cart) {
             if ($cart->quantity > 1) {
                 $cart->decrement('quantity'); // Kurangi 1
@@ -174,7 +177,7 @@ class CartController extends Controller
                 $cart->delete(); // Kalau sisa 1 dikurangi, jadi hapus
             }
         }
-        
+
         return redirect()->back();
     }
 }
