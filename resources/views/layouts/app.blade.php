@@ -16,14 +16,14 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#00A859', // Hijau Brand
-                        primaryDark: '#008F4C', // Hijau Tua (Hover)
+                        primary: '#FF69B4', // Hijau Brand
+                        primaryDark: '#FF1493', // Hijau Tua (Hover)
                         secondary: '#D32F2F', // Merah Aksen
                         dark: '#111827', // Hitam Pekat (Tegas)
                         medium: '#4B5563', // Abu-abu Gelap
                         light: '#F3F4F6', // Background Abu Sangat Muda
                         border: '#E5E7EB', // Garis Batas
-                        highlight: '#F0FDF4', // Hijau Sangat Muda
+                        highlight: '#FFE4E1', // Hijau Sangat Muda
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -64,12 +64,12 @@
         .group:hover .mega-menu {
             opacity: 1;
             visibility: visible;
-            transform: translateY(0);
+            
         }
 
         .mega-menu {
-            transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
-            transform: translateY(10px);
+            transition: opacity 0.1s linear;
+            
             opacity: 0;
             visibility: hidden;
         }
