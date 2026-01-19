@@ -1,111 +1,121 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="bg-white min-h-screen text-gray-900">
+<div class="bg-white">
     
-    {{-- Section 1: Hero Typography --}}
-    {{-- Tanpa background warna, hanya teks besar yang tegas (Editorial Style) --}}
-    <div class="container mx-auto px-6 pt-20 pb-12 border-b border-gray-200">
-        <div class="max-w-4xl">
-            <span class="block text-green-700 font-bold tracking-widest uppercase text-sm mb-4">
-                — Profil Perusahaan
-            </span>
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
-                Mitra Strategis <br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-700 to-green-900">
-                    Distribusi Buah Segar
-                </span>
-                di Bali.
-            </h1>
+    {{-- 01. HERO SECTION: THE MISSION --}}
+    {{-- Menambahkan pt-10 agar tidak terlalu mepet dengan header dari layout --}}
+    <section class="container mx-auto px-4 pt-12 pb-16 border-b-2 border-dark">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
+            <div class="md:col-span-8">
+                <span class="text-primary font-mono font-bold tracking-tighter uppercase mb-4 block">/ Company Manifesto</span>
+                <h1 class="text-5xl md:text-8xl font-black leading-[0.9] tracking-tighter text-dark uppercase">
+                    Freshness <br> <span class="text-gray-300">is our</span> <br> Infrastructure.
+                </h1>
+            </div>
+            <div class="md:col-span-4 pb-2">
+                <p class="text-sm font-mono text-medium leading-relaxed uppercase">
+                    PT. Alam Tunas Tirta beroperasi sebagai pusat saraf distribusi buah segar di Bali, menghubungkan standar agrikultur dengan kebutuhan industri komersial.
+                </p>
+            </div>
         </div>
-    </div>
+    </section>
 
-    <div class="container mx-auto px-6 py-16">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
-            
-            {{-- Kolom Kiri: Informasi Entitas (Lebih kecil, sticky/fixed feel) --}}
-            <div class="md:col-span-4">
-                <div class="sticky top-10">
-                    <div class="flex items-center gap-4 mb-8">
-                        
-                        <div class="w-20 h-20 flex-shrink-0 bg-white border border-gray-100 rounded-lg shadow-sm flex items-center justify-center p-2 overflow-hidden">
-                            <img src="{{ asset('images/logo.png') }}" 
-                                 alt="Logo PT Alam Tunas Tirta" 
-                                 class="w-full h-full object-contain">
-                        </div>
-
-                        <div>
-                            <h3 class="font-bold text-lg uppercase leading-tight text-gray-800">
-                                PT. Alam <br>Tunas Tirta
-                            </h3>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div class="border-t border-gray-200 pt-4">
-                            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Unit Bisnis</p>
-                            <p class="font-semibold">Tunas Tirta Fresh</p>
-                        </div>
-                        <div class="border-t border-gray-200 pt-4">
-                            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Berdiri Sejak</p>
-                            <p class="font-semibold">2024</p>
-                        </div>
-                        <div class="border-t border-gray-200 pt-4">
-                            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Lokasi</p>
-                            <p class="font-semibold">Denpasar Utara, Bali</p>
-                        </div>
-                    </div>
+    {{-- 02. IDENTITY SECTION: BOLD CONTRAST --}}
+    <section class="container mx-auto px-4 mt-12">
+        <div class="grid grid-cols-1 md:grid-cols-12 border-2 border-dark">
+            <!-- Kolom Identitas (Hitam) -->
+            <div class="md:col-span-5 bg-dark text-white p-12 flex flex-col justify-between min-h-[400px]">
+                <div>
+                    {{-- Logo menggunakan filter brightness agar putih di bg hitam --}}
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo" class="h-20 w-auto mb-10 brightness-0 invert">
+                    <h2 class="text-3xl font-bold uppercase leading-tight mb-6">
+                        Menjaga Kepercayaan <br> Di Setiap Pengiriman.
+                    </h2>
+                </div>
+                <div class="space-y-2 font-mono text-xs tracking-widest text-gray-400 uppercase">
+                    <p>Registration: PT. ALAM TUNAS TIRTA</p>
+                    <p>Operational Unit: TUNAS TIRTA FRESH</p>
+                    <p>Region: DENPASAR, BALI - INDONESIA</p>
                 </div>
             </div>
 
-            {{-- Kolom Kanan: Narasi Utama --}}
-            <div class="md:col-span-8 space-y-12">
-                
-                {{-- Paragraf Pembuka --}}
-                <div class="text-xl md:text-2xl font-light leading-relaxed text-gray-800">
-                    <p>
-                        Kami memastikan rantai pasok buah segar tetap terjaga kualitasnya dari perkebunan hingga ke dapur komersial Anda. Kepercayaan adalah mata uang utama kami.
-                    </p>
-                </div>
-
-                {{-- Detail Konten dengan Grid --}}
-                <div class="grid grid-cols-1 gap-8 text-gray-600 leading-relaxed border-l-2 border-gray-200 pl-8">
-                    <p>
-                        <strong class="text-gray-900">Tunas Tirta Fresh</strong> merupakan unit usaha strategis di bawah naungan 
-                        <strong>PT. Alam Tunas Tirta</strong>. Kami mengelola distribusi dan suplai buah segar dengan standar profesional untuk memenuhi permintaan pasar Bali yang dinamis.
-                    </p>
-                    <p>
-                        Fokus utama kami melayani sektor B2B (Business to Business) mencakup Hotel, Supermarket, Restoran, dan Villa. Sistem kami dirancang untuk menjamin ketepatan waktu dan konsistensi kualitas produk (Quality Control).
-                    </p>
-                </div>
-
-                {{-- Key Points Horizontal (Tampilan Data) --}}
-                <div class="bg-gray-50 p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h4 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <i class="fas fa-check-circle text-green-700 mr-2"></i> Quality Control
-                        </h4>
-                        <p class="text-sm text-gray-600">Sortir ketat untuk memastikan hanya buah grade terbaik yang dikirim.</p>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900 mb-2 flex items-center">
-                            <i class="fas fa-clock text-green-700 mr-2"></i> On-Time Delivery
-                        </h4>
-                        <p class="text-sm text-gray-600">Armada logistik yang siap mengantar sesuai jadwal operasional klien.</p>
+            <!-- Kolom Narasi (Putih) -->
+            <div class="md:col-span-7 p-12 self-center bg-white">
+                <div class="max-w-xl">
+                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-primary mb-8">About the entity —</h3>
+                    <div class="space-y-6 text-lg text-dark leading-relaxed font-medium">
+                        <p>
+                            <span class="text-primary font-bold">Tunas Tirta Fresh</span> bukan sekadar supplier. Kami adalah unit strategis yang dirancang untuk menjawab dinamika pasar B2B di Bali. 
+                        </p>
+                        <p>
+                            Kami memahami tantangan sektor hospitality. Ketepatan waktu dan konsistensi grade produk adalah dua variabel yang tidak bisa dinegosiasikan dalam operasional kami.
+                        </p>
                     </div>
                 </div>
-
-                {{-- Footer Address Section --}}
-                <div class="pt-8 mt-8 border-t border-gray-200">
-                    <h3 class="font-bold text-gray-900 text-sm uppercase mb-4">Head Office</h3>
-                    <p class="text-gray-600 font-mono text-sm">
-                        Jl. Cargo Sari III, Ubung Kaja, Kec. Denpasar Utara<br>
-                        Kota Denpasar, Bali 80116
-                    </p>
-                </div>
-
             </div>
         </div>
-    </div>
+    </section>
+
+    {{-- 03. VALUES SECTION: THE GRID SYSTEM --}}
+    <section class="container mx-auto px-4 py-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-dark">
+            <!-- Point 01 -->
+            <div class="p-10 border-b-2 md:border-b-0 md:border-r-2 border-dark group hover:bg-primary transition-colors duration-300 cursor-default">
+                <span class="block font-mono text-4xl font-black mb-10 group-hover:text-white transition-colors">01/</span>
+                <h4 class="text-xl font-black uppercase mb-4 group-hover:text-white text-dark transition-colors">Industrial Quality Control</h4>
+                <p class="text-sm font-medium leading-relaxed group-hover:text-white text-medium transition-colors">
+                    Setiap buah melewati protokol sortir manual untuk memastikan standar kematangan dan fisik yang presisi.
+                </p>
+            </div>
+            <!-- Point 02 -->
+            <div class="p-10 border-b-2 md:border-b-0 md:border-r-2 border-dark bg-gray-50 group hover:bg-dark transition-colors duration-300 cursor-default">
+                <span class="block font-mono text-4xl font-black mb-10 group-hover:text-primary text-dark transition-colors">02/</span>
+                <h4 class="text-xl font-black uppercase mb-4 group-hover:text-white text-dark transition-colors">B2B Strategic Partnership</h4>
+                <p class="text-sm font-medium leading-relaxed group-hover:text-gray-300 text-medium transition-colors">
+                    Fokus utama kami adalah mendukung rantai pasok Hotel, Restoran, dan Supermarket dengan sistem kontrak yang stabil.
+                </p>
+            </div>
+            <!-- Point 03 -->
+            <div class="p-10 group hover:bg-primary transition-colors duration-300 cursor-default">
+                <span class="block font-mono text-4xl font-black mb-10 group-hover:text-white text-dark transition-colors">03/</span>
+                <h4 class="text-xl font-black uppercase mb-4 group-hover:text-white text-dark transition-colors">Denpasar Logistics Hub</h4>
+                <p class="text-sm font-medium leading-relaxed group-hover:text-white text-medium transition-colors">
+                    Lokasi strategis di Denpasar Utara memungkinkan kami melakukan pengiriman harian dengan efisiensi waktu maksimal.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    {{-- 04. CONTACT SECTION: MINIMALIST BLOCK --}}
+    <section class="container mx-auto px-4 pb-20">
+        <div class="bg-gray-100 p-1 border-2 border-dark">
+            <div class="bg-white border border-dark p-12 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+                <div>
+                    <h2 class="text-4xl font-black uppercase italic leading-none mb-2">Ready to supply?</h2>
+                    <p class="font-mono text-xs uppercase tracking-widest text-medium">Kami siap menjadi mitra logistik buah Anda.</p>
+                </div>
+                {{-- Tombol dengan shadow Brutalist --}}
+                <a href="https://wa.me/6285701797522" 
+                   target="_blank"
+                   class="bg-dark text-white px-12 py-5 font-black uppercase text-sm tracking-widest hover:bg-primary transition-all duration-300 transform hover:-translate-y-1 shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] active:translate-y-0 active:shadow-none">
+                    Contact Us Now
+                </a>
+            </div>
+        </div>
+    </section>
+
 </div>
+
+<style>
+    /* Styling khusus untuk mempertegas karakter halaman About tanpa merusak layout utama */
+    .font-black {
+        letter-spacing: -0.05em;
+    }
+    
+    /* Menghilangkan border rounded pada elemen di halaman ini saja agar terlihat lebih tegas */
+    .container * {
+        border-radius: 0 !important;
+    }
+</style>
 @endsection

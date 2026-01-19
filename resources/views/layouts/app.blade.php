@@ -64,12 +64,12 @@
         .group:hover .mega-menu {
             opacity: 1;
             visibility: visible;
-            
+
         }
 
         .mega-menu {
             transition: opacity 0.1s linear;
-            
+
             opacity: 0;
             visibility: hidden;
         }
@@ -544,7 +544,7 @@
                                                 Jus Mangga
                                             </a>
                                         </li>
-                                        
+
                                         <li class="pt-4 mt-2 border-t border-gray-200">
                                             <a href="{{ url('/category/packages') }}"
                                                 class="inline-flex items-center text-sm font-bold text-secondary hover:text-red-700 transition-colors">
@@ -626,7 +626,7 @@
                         </div>
                     </li>
                     <li>
-                        <a href="#" class="text-sm text-gray-700 hover:text-primary font-medium relative group">
+                        <a href="{{ route('about') }}" class="text-sm text-gray-700 hover:text-primary font-medium relative group">
                             Tentang Kami
                             <span
                                 class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
@@ -1004,53 +1004,54 @@
     </nav> -->
     <main class="flex-1 py-6 bg-white fade-in relative">
         <!-- Bagian Toast Notification -->
-@if (session('success') || session('error'))
-    <div id="toast-notification"
-        class="fixed top-24 left-5 z-[100] transform transition-all duration-500 -translate-x-full opacity-0">
-        <div class="bg-white border-l-4 {{ session('error') ? 'border-red-500' : 'border-primary' }} shadow-mega rounded-r-lg p-3 flex items-start gap-2 min-w-[300px] max-w-[380px]">
-            <div class="{{ session('error') ? 'text-red-500' : 'text-primary' }} mt-0.5">
-                <i class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check-circle' }} text-sm"></i>
+        @if (session('success') || session('error'))
+            <div id="toast-notification"
+                class="fixed top-24 left-5 z-[100] transform transition-all duration-500 -translate-x-full opacity-0">
+                <div
+                    class="bg-white border-l-4 {{ session('error') ? 'border-red-500' : 'border-primary' }} shadow-mega rounded-r-lg p-3 flex items-start gap-2 min-w-[300px] max-w-[380px]">
+                    <div class="{{ session('error') ? 'text-red-500' : 'text-primary' }} mt-0.5">
+                        <i class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check-circle' }} text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-dark text-xs uppercase tracking-wide mb-0.5">
+                            {{ session('error') ? 'Perhatian' : 'Berhasil' }}
+                        </h4>
+                        <p class="text-medium text-xs leading-snug">
+                            {{ session('success') ?? session('error') }}
+                        </p>
+                    </div>
+                    <button onclick="closeToast()" class="text-gray-400 hover:text-dark transition-colors">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
             </div>
-            <div class="flex-1">
-                <h4 class="font-bold text-dark text-xs uppercase tracking-wide mb-0.5">
-                    {{ session('error') ? 'Perhatian' : 'Berhasil' }}
-                </h4>
-                <p class="text-medium text-xs leading-snug">
-                    {{ session('success') ?? session('error') }}
-                </p>
-            </div>
-            <button onclick="closeToast()" class="text-gray-400 hover:text-dark transition-colors">
-                <i class="fas fa-times text-sm"></i>
-            </button>
-        </div>
-    </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const toast = document.getElementById('toast-notification');
-            if (toast) {
-                setTimeout(() => {
-                    // Masuk dari kiri ke kanan
-                    toast.classList.remove('-translate-x-full', 'opacity-0');
-                    toast.classList.add('translate-x-0', 'opacity-100');
-                }, 100);
-                setTimeout(() => closeToast(), 3000); 
-            }
-        });
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const toast = document.getElementById('toast-notification');
+                    if (toast) {
+                        setTimeout(() => {
+                            // Masuk dari kiri ke kanan
+                            toast.classList.remove('-translate-x-full', 'opacity-0');
+                            toast.classList.add('translate-x-0', 'opacity-100');
+                        }, 100);
+                        setTimeout(() => closeToast(), 3000);
+                    }
+                });
 
-        function closeToast() {
-            const toast = document.getElementById('toast-notification');
-            if (toast) {
-                toast.classList.remove('translate-x-0', 'opacity-100');
-                // Sembunyikan kembali ke arah kiri
-                toast.classList.add('-translate-x-full', 'opacity-0');
-                setTimeout(() => {
-                    if (toast.parentNode) toast.remove();
-                }, 500);
-            }
-        }
-    </script>
-@endif
+                function closeToast() {
+                    const toast = document.getElementById('toast-notification');
+                    if (toast) {
+                        toast.classList.remove('translate-x-0', 'opacity-100');
+                        // Sembunyikan kembali ke arah kiri
+                        toast.classList.add('-translate-x-full', 'opacity-0');
+                        setTimeout(() => {
+                            if (toast.parentNode) toast.remove();
+                        }, 500);
+                    }
+                }
+            </script>
+        @endif
         @yield('content')
     </main>
     <footer class="bg-white border-t border-border py-6">
@@ -1078,7 +1079,7 @@
                             </div>
                             <span class="leading-tight">Jl. Cargo Sari III, Ubung Kaja, Denpasar Utara, Bali</span>
                         </li>
-                        
+
                         <li class="flex items-center">
                             <div class="w-4 flex-shrink-0 text-center">
                                 <i class="fab fa-whatsapp text-primary text-xs"></i>
@@ -1297,60 +1298,60 @@
         @endauth
     </div>
     <script>
-    function toggleCart(forceClose = false) {
-        const sidebar = document.getElementById('cart-sidebar');
-        const overlay = document.getElementById('cart-overlay');
-        const isOpen = !sidebar.classList.contains('translate-x-full');
+        function toggleCart(forceClose = false) {
+            const sidebar = document.getElementById('cart-sidebar');
+            const overlay = document.getElementById('cart-overlay');
+            const isOpen = !sidebar.classList.contains('translate-x-full');
 
-        if (forceClose || isOpen) {
-            sidebar.classList.add('translate-x-full');
-            overlay.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            localStorage.setItem('cartSidebarOpen', 'false');
-        } else {
-            sidebar.classList.remove('translate-x-full');
-            overlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            localStorage.setItem('cartSidebarOpen', 'true');
-        }
-    }
-
-    // Simpan posisi scroll agar halaman tidak kembali ke atas saat reload
-    function saveScrollPosition() {
-        localStorage.setItem('lastScrollPos', window.scrollY);
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const sidebar = document.getElementById('cart-sidebar');
-        const overlay = document.getElementById('cart-overlay');
-
-        // LOGIKA: Kembali ke posisi scroll & buka slider jika ada session 'show_cart'
-        @if(session('show_cart'))
-            const savedScrollPos = localStorage.getItem('lastScrollPos');
-            if (savedScrollPos) {
-                window.scrollTo(0, savedScrollPos);
-                localStorage.removeItem('lastScrollPos');
+            if (forceClose || isOpen) {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                localStorage.setItem('cartSidebarOpen', 'false');
+            } else {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                localStorage.setItem('cartSidebarOpen', 'true');
             }
-            toggleCart(false); 
-        @endif
+        }
+
+        // Simpan posisi scroll agar halaman tidak kembali ke atas saat reload
+        function saveScrollPosition() {
+            localStorage.setItem('lastScrollPos', window.scrollY);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('cart-sidebar');
+            const overlay = document.getElementById('cart-overlay');
+
+            // LOGIKA: Kembali ke posisi scroll & buka slider jika ada session 'show_cart'
+            @if(session('show_cart'))
+                const savedScrollPos = localStorage.getItem('lastScrollPos');
+                if (savedScrollPos) {
+                    window.scrollTo(0, savedScrollPos);
+                    localStorage.removeItem('lastScrollPos');
+                }
+                toggleCart(false);
+            @endif
 
         // Pasang listener pada semua form belanja untuk simpan scroll sebelum submit
         const cartActions = document.querySelectorAll('form');
-        cartActions.forEach(form => {
-            if(form.action.includes('cart') || form.getAttribute('action').includes('add')) {
-                form.addEventListener('submit', saveScrollPosition);
-            }
-        });
+            cartActions.forEach(form => {
+                if (form.action.includes('cart') || form.getAttribute('action').includes('add')) {
+                    form.addEventListener('submit', saveScrollPosition);
+                }
+            });
 
-        // UI Standard
-        overlay.addEventListener('click', () => toggleCart(true));
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !sidebar.classList.contains('translate-x-full')) {
-                toggleCart(true);
-            }
+            // UI Standard
+            overlay.addEventListener('click', () => toggleCart(true));
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !sidebar.classList.contains('translate-x-full')) {
+                    toggleCart(true);
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 
 </html>
