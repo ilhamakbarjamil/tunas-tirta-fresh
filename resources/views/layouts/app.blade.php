@@ -520,6 +520,111 @@
                             </div>
                         </div>
                     </li>
+
+                    <li class="group flex-shrink-0 relative">
+                        <a href="{{ url('/category/packages') }}"
+                            class="block px-4 py-3 text-xs font-semibold uppercase tracking-wide text-dark group-hover:text-primary border-b-2 border-transparent group-hover:border-primary transition-colors flex items-center gap-1 cursor-pointer">
+                            Package
+                            <i
+                                class="fas fa-chevron-down text-[8px] ml-1 opacity-40 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-300"></i>
+                        </a>
+
+                        <div
+                            class="mega-menu absolute left-1/2 -translate-x-1/2 top-full w-[95vw] max-w-7xl bg-white shadow-mega border-t border-gray-100 rounded-b-xl overflow-hidden z-50 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                            <div class="grid grid-cols-12 gap-8 p-8">
+                                <!-- Kolom Kiri: Kategori -->
+                                <div class="col-span-3">
+                                    <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-4">
+                                        Kategori Packages
+                                    </h3>
+                                    <ul class="space-y-2.5">
+                                        <li>
+                                            <a href="{{ url('/category/packages?subcategory=buah-lokal') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Jus Mangga
+                                            </a>
+                                        </li>
+                                        
+                                        <li class="pt-4 mt-2 border-t border-gray-200">
+                                            <a href="{{ url('/category/packages') }}"
+                                                class="inline-flex items-center text-sm font-bold text-secondary hover:text-red-700 transition-colors">
+                                                Lihat Semua Buah <span class="ml-1.5">→</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Kolom Kanan: Featured Products -->
+                                <div class="col-span-9">
+                                    <div class="flex items-center justify-between mb-5">
+                                        <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest">
+                                            Buah Terbaik Minggu Ini
+                                        </h3>
+                                        <a href="{{ url('/category/packages') }}"
+                                            class="text-sm text-primary hover:text-primaryDark font-medium flex items-center gap-1.5 group/link">
+                                            Lihat Koleksi Lengkap
+                                            <i
+                                                class="fas fa-arrow-right text-xs group-hover/link:translate-x-1 transition-transform"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="grid grid-cols-4 gap-5">
+                                        @foreach ($packageMenuProducts->take(8) as $product)
+                                            <!-- ambil 8 produk agar lebih penuh -->
+                                            <a href="{{ route('products.show', $product->slug) }}"
+                                                class="group/item relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200">
+                                                <div class="relative aspect-[4/3] overflow-hidden bg-gray-50">
+                                                    @if ($product->image && $product->image != 'pending')
+                                                        <img src="{{ asset('storage/' . $product->image) }}"
+                                                            class="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
+                                                            alt="{{ $product->name }}">
+                                                    @else
+                                                        <div
+                                                            class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                                                            <i class="fas fa-leaf text-4xl opacity-30"></i>
+                                                        </div>
+                                                    @endif
+
+                                                    <!-- Badge -->
+                                                    <span
+                                                        class="absolute top-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                        NEW
+                                                    </span>
+                                                </div>
+
+                                                <div class="p-3">
+                                                    <h4 class="text-sm font-semibold text-dark truncate mb-1">
+                                                        {{ $product->name }}
+                                                    </h4>
+                                                    <p class="text-primary font-bold text-base">
+                                                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Banner / Info -->
+                            <div class="bg-highlight px-8 py-4 border-t border-gray-100">
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-truck-fast text-2xl text-primary"></i>
+                                        <div>
+                                            <p class="font-medium text-dark">Pengiriman Hari Ini</p>
+                                            <p class="text-xs text-gray-600">Pesan sebelum jam 14:00 WIB • Gratis ongkir
+                                                area tertentu</p>
+                                        </div>
+                                    </div>
+                                    <a href="#"
+                                        class="text-primary hover:text-primaryDark font-medium flex items-center gap-1.5">
+                                        Syarat & Ketentuan <i class="fas fa-chevron-right text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
                     <li>
                         <a href="#" class="text-sm text-gray-700 hover:text-primary font-medium relative group">
                             Tentang Kami
