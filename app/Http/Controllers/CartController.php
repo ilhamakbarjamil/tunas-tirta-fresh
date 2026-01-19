@@ -59,14 +59,17 @@ class CartController extends Controller
 
     // --- FITUR UTAMA: CHECKOUT XENDIT ---
     // PERBAIKAN: Tambahkan (Request $request) di dalam kurung
+    // GANTI METHOD CHECKOUT YANG LAMA DENGAN INI:
     public function checkout(Request $request)
     {
-        // 1. Validasi Input (Wajib isi Alamat)
+
+        // dd($request->all());
+
+        // 1. Validasi Input
         $request->validate([
             'address' => 'required|string|max:500',
+            'shipping_courier' => 'required|string', // Wajib pilih kurir
             'note' => 'nullable|string|max:200',
-        ], [
-            'address.required' => 'Mohon isi alamat pengiriman dulu ya kak!',
         ]);
 
         $user = Auth::user();
@@ -76,27 +79,14 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Keranjang kosong!');
         }
 
-        // 2. Buat ID Unik Xendit
-        $externalId = 'ORDER-' . time() . '-' . Str::random(5);
+        // 2. Buat Nomor Order Unik
+        $externalId = 'ORD-' . time(); // Contoh: ORD-17682938
 
-        // 3. Simpan Order ke Database (Plus Alamat & Catatan)
-        $order = \App\Models\Order::create([
-            'user_id' => $user->id,
-            'status' => 'pending',
-            'total_price' => 0,
-            'external_id' => $externalId,
-
-            // DATA DARI FORM
-            'address' => $request->address,
-            'note' => $request->note,
-            'shipping_courier' => $request->shipping_courier, // <--- INI PENTING
-        ]);
-
+        // 3. Hitung Total & Siapkan Data Barang
         $totalOrder = 0;
-        $itemsForXendit = [];
+        $itemsListString = ""; // Variabel untuk menampung teks daftar barang
 
-        // 4. Pindahkan Keranjang ke Order Items
-        foreach ($carts as $cart) {
+        foreach ($carts as $index => $cart) {
             if ($cart->variant) {
                 $price = $cart->variant->price;
                 $productName = $cart->product->name . " (" . $cart->variant->name . ")";
@@ -110,63 +100,67 @@ class CartController extends Controller
             $subtotal = $price * $cart->quantity;
             $totalOrder += $subtotal;
 
+            // Susun Teks Barang untuk WA (Contoh: 1. Jus Jambu x 2 = Rp 30.000)
+            $no = $index + 1;
+            $itemsListString .= "$no. $productName x $cart->quantity = Rp " . number_format($subtotal, 0, ',', '.') . "\n";
+        }
+
+        // 4. Simpan Order ke Database (PENTING: Biar Admin tetap punya data)
+        $order = \App\Models\Order::create([
+            'user_id' => $user->id,
+            'status' => 'pending', // Masuk sebagai Pending
+            'total_price' => $totalOrder,
+            'external_id' => $externalId,
+            'address' => $request->address,
+            'note' => $request->note,
+            'shipping_courier' => $request->shipping_courier,
+            // payment_url kita kosongkan atau isi dummy karena transaksi di WA
+            'payment_url' => null, 
+        ]);
+
+        // 5. Pindahkan Item ke Tabel OrderItem
+        foreach ($carts as $cart) {
+            $price = $cart->variant ? $cart->variant->price : $cart->product->price;
             \App\Models\OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $cart->product_id,
-                'product_variant_id' => $variantId,
+                'product_variant_id' => $cart->variant_id,
                 'quantity' => $cart->quantity,
                 'price' => $price,
             ]);
-
-            $itemsForXendit[] = [
-                'name' => $productName,
-                'quantity' => $cart->quantity,
-                'price' => $price,
-                'category' => 'Buah Segar',
-            ];
         }
 
-        // Update Total Harga
-        $order->update(['total_price' => $totalOrder]);
+        // 6. Hapus Keranjang
+        $user->carts()->delete();
 
-        // 5. KIRIM KE XENDIT
-        Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
-        $apiInstance = new InvoiceApi();
-
-        $create_invoice_request = new \Xendit\Invoice\CreateInvoiceRequest([
-            'external_id' => $externalId,
-            'amount' => $totalOrder,
-            'description' => 'Tagihan Order #' . $order->id,
-            'invoice_duration' => 86400,
-            'customer' => [
-                'given_names' => $user->name,
-                'email' => $user->email,
-                // Kita bisa kirim alamat ke Xendit juga (Opsional)
-                'addresses' => [
-                    [
-                        'city' => 'Indonesia',
-                        'country' => 'ID',
-                        'street_line1' => $request->address
-                    ]
-                ]
-            ],
-            'success_redirect_url' => route('orders.index'),
-            'failure_redirect_url' => route('home'),
-            'currency' => 'IDR',
-            'items' => $itemsForXendit
-        ]);
-
-        try {
-            $result = $apiInstance->createInvoice($create_invoice_request);
-
-            $order->update(['payment_url' => $result['invoice_url']]);
-            $user->carts()->delete();
-
-            return redirect($result['invoice_url']);
-
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+        // ---------------------------------------------------------
+        // 7. SUSUN PESAN WHATSAPP (MAGIC HAPPENS HERE) ✨
+        // ---------------------------------------------------------
+        $waAdmin = env('WHATSAPP_ADMIN', '6281234567890'); // Ambil no dari .env
+        
+        $message = "Halo Kak, saya mau pesan buah dong! 🍎\n\n";
+        $message .= "*No. Order:* $externalId\n";
+        $message .= "*Nama:* $user->name\n";
+        $message .= "*Alamat:* $request->address\n";
+        $message .= "*Kurir:* $request->shipping_courier\n\n";
+        
+        $message .= "*Detail Pesanan:*\n";
+        $message .= "----------------------------\n";
+        $message .= $itemsListString; // Masukkan daftar barang tadi
+        $message .= "----------------------------\n";
+        $message .= "*Total Belanja: Rp " . number_format($totalOrder, 0, ',', '.') . "*\n\n";
+        
+        if ($request->note) {
+            $message .= "*Catatan:* $request->note\n\n";
         }
+        
+        $message .= "Mohon info total ongkir dan nomor rekening ya kak. Terima kasih! 🙏";
+
+        // Encode pesan agar bisa jadi URL (Spasi jadi %20, Enter jadi %0A)
+        $urlWhatsApp = "https://wa.me/$waAdmin?text=" . urlencode($message);
+
+        // 8. Redirect Langsung ke WhatsApp
+        return redirect($urlWhatsApp);
     }
 
     public function decrease($id)
