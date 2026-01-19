@@ -1003,51 +1003,54 @@
         </div>
     </nav> -->
     <main class="flex-1 py-6 bg-white fade-in relative">
-        @if (session('success') || session('error'))
-            <div id="toast-notification"
-                class="fixed top-24 right-5 z-[100] transform transition-all duration-500 translate-x-full opacity-0">
-                <div
-                    class="bg-white border-l-4 {{ session('error') ? 'border-red-500' : 'border-primary' }} shadow-mega rounded-r-lg p-3 flex items-start gap-2 min-w-[300px] max-w-[380px]">
-                    <div class="{{ session('error') ? 'text-red-500' : 'text-primary' }} mt-0.5">
-                        <i class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check-circle' }} text-sm"></i>
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="font-bold text-dark text-xs uppercase tracking-wide mb-0.5">
-                            {{ session('error') ? 'Perhatian' : 'Berhasil' }}
-                        </h4>
-                        <p class="text-medium text-xs leading-snug">
-                            {{ session('success') ?? session('error') }}
-                        </p>
-                    </div>
-                    <button onclick="closeToast()" class="text-gray-400 hover:text-dark transition-colors">
-                        <i class="fas fa-times text-sm"></i>
-                    </button>
-                </div>
+        <!-- Bagian Toast Notification -->
+@if (session('success') || session('error'))
+    <div id="toast-notification"
+        class="fixed top-24 left-5 z-[100] transform transition-all duration-500 -translate-x-full opacity-0">
+        <div class="bg-white border-l-4 {{ session('error') ? 'border-red-500' : 'border-primary' }} shadow-mega rounded-r-lg p-3 flex items-start gap-2 min-w-[300px] max-w-[380px]">
+            <div class="{{ session('error') ? 'text-red-500' : 'text-primary' }} mt-0.5">
+                <i class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check-circle' }} text-sm"></i>
             </div>
-            <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                    const toast = document.getElementById('toast-notification');
-                    if (toast) {
-                        setTimeout(() => {
-                            toast.classList.remove('translate-x-full', 'opacity-0');
-                            toast.classList.add('translate-x-0', 'opacity-100');
-                        }, 100);
-                        setTimeout(() => closeToast(), 2000); // Durasi dikurangi dari 4000ms ke 2000ms
-                    }
-                });
+            <div class="flex-1">
+                <h4 class="font-bold text-dark text-xs uppercase tracking-wide mb-0.5">
+                    {{ session('error') ? 'Perhatian' : 'Berhasil' }}
+                </h4>
+                <p class="text-medium text-xs leading-snug">
+                    {{ session('success') ?? session('error') }}
+                </p>
+            </div>
+            <button onclick="closeToast()" class="text-gray-400 hover:text-dark transition-colors">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
 
-                function closeToast() {
-                    const toast = document.getElementById('toast-notification');
-                    if (toast) {
-                        toast.classList.remove('translate-x-0', 'opacity-100');
-                        toast.classList.add('translate-x-full', 'opacity-0');
-                        setTimeout(() => {
-                            if (toast.parentNode) toast.remove();
-                        }, 500);
-                    }
-                }
-            </script>
-        @endif
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const toast = document.getElementById('toast-notification');
+            if (toast) {
+                setTimeout(() => {
+                    // Masuk dari kiri ke kanan
+                    toast.classList.remove('-translate-x-full', 'opacity-0');
+                    toast.classList.add('translate-x-0', 'opacity-100');
+                }, 100);
+                setTimeout(() => closeToast(), 3000); 
+            }
+        });
+
+        function closeToast() {
+            const toast = document.getElementById('toast-notification');
+            if (toast) {
+                toast.classList.remove('translate-x-0', 'opacity-100');
+                // Sembunyikan kembali ke arah kiri
+                toast.classList.add('-translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, 500);
+            }
+        }
+    </script>
+@endif
         @yield('content')
     </main>
     <footer class="bg-white border-t border-border py-6">
@@ -1294,77 +1297,60 @@
         @endauth
     </div>
     <script>
-        function toggleCart(forceClose = false) {
-            const sidebar = document.getElementById('cart-sidebar');
-            const overlay = document.getElementById('cart-overlay');
-            const isOpen = !sidebar.classList.contains('translate-x-full');
+    function toggleCart(forceClose = false) {
+        const sidebar = document.getElementById('cart-sidebar');
+        const overlay = document.getElementById('cart-overlay');
+        const isOpen = !sidebar.classList.contains('translate-x-full');
 
-            // Jika forceClose true, tutup paksa tanpa memeriksa isi keranjang
-            if (forceClose || isOpen) {
-                sidebar.classList.add('translate-x-full');
-                overlay.classList.add('hidden');
-                document.body.style.overflow = 'auto';
-                // Simpan status tertutup di localStorage
-                localStorage.setItem('cartSidebarOpen', 'false');
-            } else {
-                sidebar.classList.remove('translate-x-full');
-                overlay.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-                // Simpan status terbuka di localStorage
-                localStorage.setItem('cartSidebarOpen', 'true');
-            }
+        if (forceClose || isOpen) {
+            sidebar.classList.add('translate-x-full');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            localStorage.setItem('cartSidebarOpen', 'false');
+        } else {
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            localStorage.setItem('cartSidebarOpen', 'true');
         }
+    }
 
-        // Cek status keranjang dari localStorage saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', function () {
-            const sidebar = document.getElementById('cart-sidebar');
-            const overlay = document.getElementById('cart-overlay');
-            const cartEmpty = sidebar.querySelector('.h-full.flex-col.items-center.justify-center.text-center');
+    // Simpan posisi scroll agar halaman tidak kembali ke atas saat reload
+    function saveScrollPosition() {
+        localStorage.setItem('lastScrollPos', window.scrollY);
+    }
 
-            // Jika keranjang tidak kosong dan sebelumnya slider dibuka, buka kembali slider
-            if (!cartEmpty && localStorage.getItem('cartSidebarOpen') === 'true') {
-                sidebar.classList.remove('translate-x-full');
-                overlay.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('cart-sidebar');
+        const overlay = document.getElementById('cart-overlay');
+
+        // LOGIKA: Kembali ke posisi scroll & buka slider jika ada session 'show_cart'
+        @if(session('show_cart'))
+            const savedScrollPos = localStorage.getItem('lastScrollPos');
+            if (savedScrollPos) {
+                window.scrollTo(0, savedScrollPos);
+                localStorage.removeItem('lastScrollPos');
             }
+            toggleCart(false); 
+        @endif
 
-            // Event listener untuk menutup saat klik overlay
-            overlay.addEventListener('click', function () {
+        // Pasang listener pada semua form belanja untuk simpan scroll sebelum submit
+        const cartActions = document.querySelectorAll('form');
+        cartActions.forEach(form => {
+            if(form.action.includes('cart') || form.getAttribute('action').includes('add')) {
+                form.addEventListener('submit', saveScrollPosition);
+            }
+        });
+
+        // UI Standard
+        overlay.addEventListener('click', () => toggleCart(true));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !sidebar.classList.contains('translate-x-full')) {
                 toggleCart(true);
-            });
-
-            // Tutup saat tombol escape ditekan
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    const sidebar = document.getElementById('cart-sidebar');
-                    if (!sidebar.classList.contains('translate-x-full')) {
-                        toggleCart(true);
-                    }
-                }
-            });
+            }
         });
-
-        // Jangan tutup slider ketika item dihapus selama masih ada item lain
-        document.addEventListener('DOMContentLoaded', function () {
-            // Cegah penutupan otomatis setelah menghapus item
-            const deleteButtons = document.querySelectorAll('form[action*="/cart/"][method="POST"]');
-            deleteButtons.forEach(form => {
-                form.addEventListener('submit', function (e) {
-                    // Simpan status sebelum submit
-                    const sidebar = document.getElementById('cart-sidebar');
-                    const wasOpen = !sidebar.classList.contains('translate-x-full');
-
-                    // Jika slider terbuka sebelum submit, pastikan tetap terbuka setelah submit
-                    if (wasOpen) {
-                        // Tunggu sedikit sebelum reload untuk menyimpan status
-                        setTimeout(() => {
-                            localStorage.setItem('cartSidebarOpen', 'true');
-                        }, 100);
-                    }
-                });
-            });
-        });
-    </script>
+    });
+</script>
 </body>
 
 </html>

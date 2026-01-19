@@ -45,13 +45,16 @@ class CartController extends Controller
 
         // --- UPDATE DI SINI ---
         // Kita kirim sinyal 'show_cart' => true agar Sidebar otomatis terbuka
+        // return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
         return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
     }
 
     public function destroy($id)
     {
+        // Cart::find($id)->delete();
+        // return redirect()->back()->with('success', 'Produk dihapus.');
         Cart::find($id)->delete();
-        return redirect()->back()->with('success', 'Produk dihapus.');
+        return redirect()->back()->with('show_cart', true)->with('success', 'Produk dihapus.');
     }
 
     // --- FITUR UTAMA: CHECKOUT XENDIT ---
@@ -178,6 +181,7 @@ class CartController extends Controller
             }
         }
 
-        return redirect()->back();
+        // return redirect()->back();
+        return redirect()->back()->with('show_cart', true);
     }
 }
