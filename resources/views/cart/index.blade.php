@@ -138,21 +138,22 @@
                                     placeholder="Jalan, No Rumah, Patokan..."></textarea>
                             </div>
 
-                            <div>
+                            <input type="hidden" name="shipping_courier" value="Menyesuaikan (Hubungi Admin)">
+                            <!-- <div>
                                 <label class="block text-xs font-black text-gray-500 uppercase mb-2">Metode Pengiriman</label>
                                 <div class="relative">
                                     <select name="shipping_courier"
                                         class="w-full border border-gray-300 p-3 rounded-md appearance-none bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm cursor-pointer">
                                         <option value="Kurir Toko (Bayar Ongkir di Tempat)">Kurir Toko (COD Ongkir)</option>
-                                        <!-- <option value="GoSend/Grab (Bayar di Tempat)">🟢 GoSend/Grab (COD Ongkir)</option>
+                                        <option value="GoSend/Grab (Bayar di Tempat)">🟢 GoSend/Grab (COD Ongkir)</option>
                                         <option value="Ambil Sendiri (Gratis)">🏪 Ambil Sendiri di Toko</option>
-                                        <option value="Ekspedisi (Menyesuaikan)">📦 Ekspedisi Luar Kota</option> -->
+                                        <option value="Ekspedisi (Menyesuaikan)">📦 Ekspedisi Luar Kota</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
                                         <i class="fas fa-chevron-down text-xs"></i>
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
                             
 
                             <div>
