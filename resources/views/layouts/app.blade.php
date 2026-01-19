@@ -1055,7 +1055,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="pr-3">
                     <div class="flex items-center space-x-1.5 mb-3">
-                        <div class="w-20 h-auto flex-shrink-0 flex items-center justify-start">
+                        <div class="w-10 h-auto flex-shrink-0 flex items-center justify-start">
                             <img src="{{ asset('images/logo.png') }}" alt="Tunas Tirta Fresh"
                                 class="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300">
                         </div>
@@ -1075,17 +1075,12 @@
                             </div>
                             <span class="leading-tight">Jl. Cargo Sari III, Ubung Kaja, Denpasar Utara, Bali</span>
                         </li>
-                        <li class="flex items-center">
-                            <div class="w-4 flex-shrink-0 text-center">
-                                <i class="fas fa-phone text-primary"></i>
-                            </div>
-                            <span>(0361) 123-4567</span>
-                        </li>
+                        
                         <li class="flex items-center">
                             <div class="w-4 flex-shrink-0 text-center">
                                 <i class="fab fa-whatsapp text-primary text-xs"></i>
                             </div>
-                            <span>+62 812-3456-7890</span>
+                            <span>+62 8570-1797-522</span>
                         </li>
                     </ul>
                 </div>
