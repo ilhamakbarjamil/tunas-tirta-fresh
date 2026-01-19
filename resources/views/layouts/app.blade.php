@@ -77,80 +77,461 @@
 </head>
 
 <body class="bg-white text-dark flex flex-col min-h-screen">
-    <div class="bg-dark text-white text-xs font-medium py-1.5">
-        <div class="container mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <span><i class="fas fa-check-circle text-primary mr-1"></i> Jaminan Kualitas 100%</span>
-                <span class="hidden sm:inline text-gray-400">|</span>
-                <span class="hidden sm:inline"><i class="fas fa-truck text-primary mr-1"></i> Pengiriman Cepat
-                    Bali</span>
-            </div>
-            <div class="flex items-center space-x-4">
-                @auth
-                    <a href="{{ route('orders.index') }}" class="hover:text-primary transition-colors text-xs">Pesanan
-                        Saya</a>
-                    <form action="{{ route('logout') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="hover:text-primary transition-colors text-xs">Keluar</button>
-                    </form>
-                @else
-                    <a href="{{ route('login') }}" class="hover:text-primary transition-colors font-semibold text-xs">Masuk
-                        / Daftar</a>
-                @endauth
+
+    <header class="bg-white border-b border-gray-100 shadow-sm relative z-50">
+        <!-- Top Bar - Dengan imperfection yang natural -->
+        <div class="bg-primary text-white text-xs font-medium py-1.5">
+            <div class="container mx-auto px-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <span class="flex items-center">
+                        <i class="fas fa-check-circle mr-1"></i> Jaminan Kualitas 100%
+                    </span>
+                    <span class="hidden sm:inline text-white/70">|</span>
+                    <span class="hidden sm:inline flex items-center">
+                        <i class="fas fa-truck mr-1"></i> Pengiriman Cepat Bali
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    @auth
+                        <a href="{{ route('orders.index') }}" class="hover:text-white transition-colors">
+                            Pesanan Saya
+                        </a>
+                        <form action="{{ route('logout') }}" method="POST" class="inline m-0">
+                            @csrf
+                            <button type="submit" class="hover:text-white transition-colors">
+                                Keluar
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="hover:text-white transition-colors font-semibold">
+                            Masuk / Daftar
+                        </a>
+                    @endauth
+                </div>
             </div>
         </div>
-    </div>
-    <header class="bg-white border-b border-border py-4 relative z-30">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between gap-4 md:gap-6">
-                <a href="{{ route('home') }}" class="flex-shrink-0 group">
-                    <div class="flex items-center gap-3">
-                        <div class="w-20 h-auto flex-shrink-0 flex items-center justify-start">
-                            <img src="{{ asset('images/logo.png') }}" alt="Tunas Tirta Fresh"
-                                class="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300">
-                        </div>
-                        <div class="hidden md:block">
-                            <h1 class="text-base font-black text-dark tracking-tighter uppercase leading-none">PT. Alam
-                                <br>Tunas Tirta
-                            </h1>
-                        </div>
+
+        <!-- Main Header - Lebih natural dan tidak terlalu simetris -->
+        <div class="container mx-auto px-4 py-2.5">
+            <div class="flex items-center justify-between">
+                <!-- Logo - Dengan penyesuaian natural -->
+                <a href="{{ route('home') }}" class="flex items-center gap-2.5">
+                    <div class="w-10 h-10">
+                        <img src="{{ asset('images/logo.png') }}" alt="Tunas Tirta Fresh"
+                            class="w-full h-full object-contain">
                     </div>
+                    <span class="text-gray-800 font-bold text-lg">
+                        Tunas Tirta Fresh
+                    </span>
                 </a>
-                <div class="flex-1 max-w-3xl">
+
+                <!-- Search Bar - Lebih terintegrasi -->
+                <div class="w-full max-w-2xl mx-8">
                     <form action="{{ route('home') }}" method="GET" class="relative">
-                        <div class="relative flex items-center">
+                        <div class="flex items-center border border-gray-200 rounded-md overflow-hidden">
                             <input type="text" name="search" value="{{ request('search') }}"
                                 placeholder="Cari apel, mangga, atau jus..."
-                                class="w-full pl-3 pr-10 py-2 border-2 border-gray-200 bg-gray-50 rounded text-xs font-medium text-dark focus:bg-white focus:border-dark focus:ring-0 transition-all outline-none placeholder-gray-400">
+                                class="w-full px-3 py-1.5 text-sm focus:outline-none">
                             <button type="submit"
-                                class="absolute right-0 top-0 bottom-0 px-3 text-gray-500 hover:text-dark transition-colors">
-                                <i class="fas fa-search text-sm"></i>
+                                class="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border-l border-gray-200">
+                                <i class="fas fa-search text-gray-500"></i>
                             </button>
                         </div>
                     </form>
                 </div>
-                <button onclick="toggleCart()" class="flex items-center gap-2 group">
-                    <div
-                        class="relative w-8 h-8 bg-gray-50 rounded border border-gray-200 flex items-center justify-center group-hover:border-dark transition-colors">
-                        <i class="fas fa-shopping-bag text-sm text-dark"></i>
+
+                <!-- Cart - Tanpa teks berlebihan -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-shopping-bag text-gray-800 text-lg"></i>
                         @auth
                             @if (Auth::user()->carts()->count() > 0)
                                 <span
-                                    class="absolute -top-1 -right-1 bg-secondary text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                                    class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                                     {{ Auth::user()->carts()->count() }}
                                 </span>
                             @endif
                         @endauth
-                    </div>
-                    <div class="hidden lg:block text-left">
-                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Keranjang</p>
-                        <p class="text-xs font-bold text-dark group-hover:text-primary transition-colors">Lihat Item</p>
-                    </div>
-                </button>
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Navigation Bar - Dengan spacing yang natural -->
+        <nav class="border-t border-gray-100">
+            <div class="container mx-auto px-4">
+                <ul class="flex items-center justify-center space-x-7 py-2">
+                    <li>
+                        <a href="{{ route('home') }}"
+                            class="text-sm text-gray-700 hover:text-primary font-medium relative group">
+                            Beranda
+                            <span
+                                class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
+                        </a>
+                    </li>
+                    <li class="group flex-shrink-0 relative">
+                        <a href="{{ url('/category/fresh-fruits') }}"
+                            class="block px-4 py-3 text-xs font-semibold uppercase tracking-wide text-dark group-hover:text-primary border-b-2 border-transparent group-hover:border-primary transition-colors flex items-center gap-1 cursor-pointer">
+                            Fresh Fruits
+                            <i
+                                class="fas fa-chevron-down text-[8px] ml-1 opacity-40 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-300"></i>
+                        </a>
+
+                        <div
+                            class="mega-menu absolute left-1/2 -translate-x-1/2 top-full w-[95vw] max-w-7xl bg-white shadow-mega border-t border-gray-100 rounded-b-xl overflow-hidden z-50 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                            <div class="grid grid-cols-12 gap-8 p-8">
+                                <!-- Kolom Kiri: Kategori -->
+                                <div class="col-span-3">
+                                    <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-4">
+                                        Kategori Buah
+                                    </h3>
+                                    <ul class="space-y-2.5">
+                                        <li>
+                                            <a href="{{ url('/category/fresh-fruits?subcategory=buah-lokal') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Buah Lokal
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/fresh-fruits?subcategory=buah-import') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Buah Import Premium
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/fresh-fruits?subcategory=buah-tropis') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Buah Tropis
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/fresh-fruits?subcategory=buah-musiman') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Buah Musiman
+                                            </a>
+                                        </li>
+                                        <li class="pt-4 mt-2 border-t border-gray-200">
+                                            <a href="{{ url('/category/fresh-fruits') }}"
+                                                class="inline-flex items-center text-sm font-bold text-secondary hover:text-red-700 transition-colors">
+                                                Lihat Semua Buah <span class="ml-1.5">→</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Kolom Kanan: Featured Products -->
+                                <div class="col-span-9">
+                                    <div class="flex items-center justify-between mb-5">
+                                        <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest">
+                                            Buah Terbaik Minggu Ini
+                                        </h3>
+                                        <a href="{{ url('/category/fresh-fruits') }}"
+                                            class="text-sm text-primary hover:text-primaryDark font-medium flex items-center gap-1.5 group/link">
+                                            Lihat Koleksi Lengkap
+                                            <i
+                                                class="fas fa-arrow-right text-xs group-hover/link:translate-x-1 transition-transform"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="grid grid-cols-4 gap-5">
+                                        @foreach ($freshMenuProducts->take(8) as $product)
+                                            <!-- ambil 8 produk agar lebih penuh -->
+                                            <a href="{{ route('products.show', $product->slug) }}"
+                                                class="group/item relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200">
+                                                <div class="relative aspect-[4/3] overflow-hidden bg-gray-50">
+                                                    @if ($product->image && $product->image != 'pending')
+                                                        <img src="{{ asset('storage/' . $product->image) }}"
+                                                            class="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
+                                                            alt="{{ $product->name }}">
+                                                    @else
+                                                        <div
+                                                            class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                                                            <i class="fas fa-leaf text-4xl opacity-30"></i>
+                                                        </div>
+                                                    @endif
+
+                                                    <!-- Badge -->
+                                                    <span
+                                                        class="absolute top-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                        NEW
+                                                    </span>
+                                                </div>
+
+                                                <div class="p-3">
+                                                    <h4 class="text-sm font-semibold text-dark truncate mb-1">
+                                                        {{ $product->name }}
+                                                    </h4>
+                                                    <p class="text-primary font-bold text-base">
+                                                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Banner / Info -->
+                            <div class="bg-highlight px-8 py-4 border-t border-gray-100">
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-truck-fast text-2xl text-primary"></i>
+                                        <div>
+                                            <p class="font-medium text-dark">Pengiriman Hari Ini</p>
+                                            <p class="text-xs text-gray-600">Pesan sebelum jam 14:00 WIB • Gratis ongkir
+                                                area tertentu</p>
+                                        </div>
+                                    </div>
+                                    <a href="#"
+                                        class="text-primary hover:text-primaryDark font-medium flex items-center gap-1.5">
+                                        Syarat & Ketentuan <i class="fas fa-chevron-right text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="group flex-shrink-0 relative">
+                        <a href="{{ url('/category/frozen-fruits') }}"
+                            class="block px-4 py-3 text-xs font-semibold uppercase tracking-wide text-dark group-hover:text-primary border-b-2 border-transparent group-hover:border-primary transition-colors flex items-center gap-1 cursor-pointer">
+                            Frozen Fruit
+                            <i
+                                class="fas fa-chevron-down text-[8px] ml-1 opacity-40 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-300"></i>
+                        </a>
+
+                        <div
+                            class="mega-menu absolute left-1/2 -translate-x-1/2 top-full w-[95vw] max-w-7xl bg-white shadow-mega border-t border-gray-100 rounded-b-xl overflow-hidden z-50 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                            <div class="grid grid-cols-12 gap-8 p-8">
+                                <!-- Kolom Kiri: Kategori -->
+                                <div class="col-span-3">
+                                    <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-4">
+                                        Kategori Buah
+                                    </h3>
+                                    <ul class="space-y-2.5">
+                                        <li>
+                                            <a href="{{ url('/category/frozen-fruits?subcategory=buah-lokal') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Frozen Buah Tropis
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/frozen-fruits?subcategory=buah-import') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Frozen Berries
+                                            </a>
+                                        </li>
+                                        <li class="pt-4 mt-2 border-t border-gray-200">
+                                            <a href="{{ url('/category/frozen-fruits') }}"
+                                                class="inline-flex items-center text-sm font-bold text-secondary hover:text-red-700 transition-colors">
+                                                Lihat Semua Buah <span class="ml-1.5">→</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Kolom Kanan: Featured Products -->
+                                <div class="col-span-9">
+                                    <div class="flex items-center justify-between mb-5">
+                                        <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest">
+                                            Buah Terbaik Minggu Ini
+                                        </h3>
+                                        <a href="{{ url('/category/frozen-fruits') }}"
+                                            class="text-sm text-primary hover:text-primaryDark font-medium flex items-center gap-1.5 group/link">
+                                            Lihat Koleksi Lengkap
+                                            <i
+                                                class="fas fa-arrow-right text-xs group-hover/link:translate-x-1 transition-transform"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="grid grid-cols-4 gap-5">
+                                        @foreach ($frozenMenuProducts->take(8) as $product)
+                                            <!-- ambil 8 produk agar lebih penuh -->
+                                            <a href="{{ route('products.show', $product->slug) }}"
+                                                class="group/item relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200">
+                                                <div class="relative aspect-[4/3] overflow-hidden bg-gray-50">
+                                                    @if ($product->image && $product->image != 'pending')
+                                                        <img src="{{ asset('storage/' . $product->image) }}"
+                                                            class="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
+                                                            alt="{{ $product->name }}">
+                                                    @else
+                                                        <div
+                                                            class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                                                            <i class="fas fa-leaf text-4xl opacity-30"></i>
+                                                        </div>
+                                                    @endif
+
+                                                    <!-- Badge -->
+                                                    <span
+                                                        class="absolute top-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                        Fresh
+                                                    </span>
+                                                </div>
+
+                                                <div class="p-3">
+                                                    <h4 class="text-sm font-semibold text-dark truncate mb-1">
+                                                        {{ $product->name }}
+                                                    </h4>
+                                                    <p class="text-primary font-bold text-base">
+                                                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Banner / Info -->
+                            <div class="bg-highlight px-8 py-4 border-t border-gray-100">
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-truck-fast text-2xl text-primary"></i>
+                                        <div>
+                                            <p class="font-medium text-dark">Pengiriman Hari Ini</p>
+                                            <p class="text-xs text-gray-600">Pesan sebelum jam 14:00 WIB • Gratis ongkir
+                                                area tertentu</p>
+                                        </div>
+                                    </div>
+                                    <a href="#"
+                                        class="text-primary hover:text-primaryDark font-medium flex items-center gap-1.5">
+                                        Syarat & Ketentuan <i class="fas fa-chevron-right text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="group flex-shrink-0 relative">
+                        <a href="{{ url('/category/fresh-drinks') }}"
+                            class="block px-4 py-3 text-xs font-semibold uppercase tracking-wide text-dark group-hover:text-primary border-b-2 border-transparent group-hover:border-primary transition-colors flex items-center gap-1 cursor-pointer">
+                            Fresh Juice
+                            <i
+                                class="fas fa-chevron-down text-[8px] ml-1 opacity-40 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-300"></i>
+                        </a>
+
+                        <div
+                            class="mega-menu absolute left-1/2 -translate-x-1/2 top-full w-[95vw] max-w-7xl bg-white shadow-mega border-t border-gray-100 rounded-b-xl overflow-hidden z-50 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
+                            <div class="grid grid-cols-12 gap-8 p-8">
+                                <!-- Kolom Kiri: Kategori -->
+                                <div class="col-span-3">
+                                    <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-4">
+                                        Kategori Jus
+                                    </h3>
+                                    <ul class="space-y-2.5">
+                                        <li>
+                                            <a href="{{ url('/category/fresh-drinks?subcategory=buah-lokal') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Jus Mangga
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/fresh-drinks?subcategory=buah-import') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Jus Alpukat
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/fresh-drinks?subcategory=buah-tropis') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Jus Jambu
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url('/category/fresh-drinks?subcategory=buah-musiman') }}"
+                                                class="text-sm font-medium text-gray-700 hover:text-primary hover:translate-x-1.5 transition-all duration-200 block py-1">
+                                                Jus Melon
+                                            </a>
+                                        </li>
+                                        <li class="pt-4 mt-2 border-t border-gray-200">
+                                            <a href="{{ url('/category/fresh-drinks') }}"
+                                                class="inline-flex items-center text-sm font-bold text-secondary hover:text-red-700 transition-colors">
+                                                Lihat Semua Buah <span class="ml-1.5">→</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Kolom Kanan: Featured Products -->
+                                <div class="col-span-9">
+                                    <div class="flex items-center justify-between mb-5">
+                                        <h3 class="text-xs font-extrabold text-gray-500 uppercase tracking-widest">
+                                            Buah Terbaik Minggu Ini
+                                        </h3>
+                                        <a href="{{ url('/category/fresh-drinks') }}"
+                                            class="text-sm text-primary hover:text-primaryDark font-medium flex items-center gap-1.5 group/link">
+                                            Lihat Koleksi Lengkap
+                                            <i
+                                                class="fas fa-arrow-right text-xs group-hover/link:translate-x-1 transition-transform"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="grid grid-cols-4 gap-5">
+                                        @foreach ($drinkMenuProducts->take(8) as $product)
+                                            <!-- ambil 8 produk agar lebih penuh -->
+                                            <a href="{{ route('products.show', $product->slug) }}"
+                                                class="group/item relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200">
+                                                <div class="relative aspect-[4/3] overflow-hidden bg-gray-50">
+                                                    @if ($product->image && $product->image != 'pending')
+                                                        <img src="{{ asset('storage/' . $product->image) }}"
+                                                            class="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
+                                                            alt="{{ $product->name }}">
+                                                    @else
+                                                        <div
+                                                            class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                                                            <i class="fas fa-leaf text-4xl opacity-30"></i>
+                                                        </div>
+                                                    @endif
+
+                                                    <!-- Badge -->
+                                                    <span
+                                                        class="absolute top-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                        NEW
+                                                    </span>
+                                                </div>
+
+                                                <div class="p-3">
+                                                    <h4 class="text-sm font-semibold text-dark truncate mb-1">
+                                                        {{ $product->name }}
+                                                    </h4>
+                                                    <p class="text-primary font-bold text-base">
+                                                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Banner / Info -->
+                            <div class="bg-highlight px-8 py-4 border-t border-gray-100">
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-truck-fast text-2xl text-primary"></i>
+                                        <div>
+                                            <p class="font-medium text-dark">Pengiriman Hari Ini</p>
+                                            <p class="text-xs text-gray-600">Pesan sebelum jam 14:00 WIB • Gratis ongkir
+                                                area tertentu</p>
+                                        </div>
+                                    </div>
+                                    <a href="#"
+                                        class="text-primary hover:text-primaryDark font-medium flex items-center gap-1.5">
+                                        Syarat & Ketentuan <i class="fas fa-chevron-right text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="#" class="text-sm text-gray-700 hover:text-primary font-medium relative group">
+                            Tentang Kami
+                            <span
+                                class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
     </header>
-    <nav class="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
+    <!-- <nav class="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
         <div class="container mx-auto px-4 relative">
             <ul class="flex items-center space-x-1">
                 <li class="flex-shrink-0">
@@ -515,7 +896,7 @@
                 </li>
             </ul>
         </div>
-    </nav>
+    </nav> -->
     <main class="flex-1 py-6 bg-white fade-in relative">
         @if (session('success') || session('error'))
             <div id="toast-notification"
@@ -523,8 +904,7 @@
                 <div
                     class="bg-white border-l-4 {{ session('error') ? 'border-red-500' : 'border-primary' }} shadow-mega rounded-r-lg p-3 flex items-start gap-2 min-w-[300px] max-w-[380px]">
                     <div class="{{ session('error') ? 'text-red-500' : 'text-primary' }} mt-0.5">
-                        <i
-                            class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check-circle' }} text-sm"></i>
+                        <i class="fas {{ session('error') ? 'fa-exclamation-circle' : 'fa-check-circle' }} text-sm"></i>
                     </div>
                     <div class="flex-1">
                         <h4 class="font-bold text-dark text-xs uppercase tracking-wide mb-0.5">
@@ -540,7 +920,7 @@
                 </div>
             </div>
             <script>
-                document.addEventListener("DOMContentLoaded", function() {
+                document.addEventListener("DOMContentLoaded", function () {
                     const toast = document.getElementById('toast-notification');
                     if (toast) {
                         setTimeout(() => {
@@ -733,15 +1113,12 @@
                                 $subtotal = $price * $item->quantity;
                                 $sideTotal += $subtotal;
                             @endphp
-                            <div
-                                class="flex gap-3 p-2 border border-gray-100 rounded-lg hover:border-gray-300 transition-colors">
+                            <div class="flex gap-3 p-2 border border-gray-100 rounded-lg hover:border-gray-300 transition-colors">
                                 <div class="w-14 h-14 bg-gray-50 rounded-md flex-shrink-0 overflow-hidden relative">
                                     @if ($item->product->image && $item->product->image != 'pending')
-                                        <img src="{{ asset('storage/' . $item->product->image) }}"
-                                            class="w-full h-full object-cover">
+                                        <img src="{{ asset('storage/' . $item->product->image) }}" class="w-full h-full object-cover">
                                     @else
-                                        <div
-                                            class="w-full h-full bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                                        <div class="w-full h-full bg-gray-100 flex items-center justify-center text-xs text-gray-400">
                                             No
                                             Img</div>
                                     @endif
@@ -751,8 +1128,7 @@
                                         <h3 class="text-dark font-medium text-xs truncate pr-2">{{ $name }}</h3>
                                         <form action="{{ route('cart.destroy', $item->id) }}" method="POST">
                                             @csrf @method('DELETE')
-                                            <button type="submit"
-                                                class="text-gray-400 hover:text-red-500 transition-colors">
+                                            <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors">
                                                 <i class="fas fa-trash-alt text-xs"></i>
                                             </button>
                                         </form>
@@ -766,7 +1142,8 @@
                                                 x</span>
                                         </div>
                                         <p class="font-medium text-dark text-xs">Rp
-                                            {{ number_format($subtotal, 0, ',', '.') }}</p>
+                                            {{ number_format($subtotal, 0, ',', '.') }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -839,7 +1216,7 @@
         }
 
         // Cek status keranjang dari localStorage saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const sidebar = document.getElementById('cart-sidebar');
             const overlay = document.getElementById('cart-overlay');
             const cartEmpty = sidebar.querySelector('.h-full.flex-col.items-center.justify-center.text-center');
@@ -852,12 +1229,12 @@
             }
 
             // Event listener untuk menutup saat klik overlay
-            overlay.addEventListener('click', function() {
+            overlay.addEventListener('click', function () {
                 toggleCart(true);
             });
 
             // Tutup saat tombol escape ditekan
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     const sidebar = document.getElementById('cart-sidebar');
                     if (!sidebar.classList.contains('translate-x-full')) {
@@ -868,11 +1245,11 @@
         });
 
         // Jangan tutup slider ketika item dihapus selama masih ada item lain
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Cegah penutupan otomatis setelah menghapus item
             const deleteButtons = document.querySelectorAll('form[action*="/cart/"][method="POST"]');
             deleteButtons.forEach(form => {
-                form.addEventListener('submit', function(e) {
+                form.addEventListener('submit', function (e) {
                     // Simpan status sebelum submit
                     const sidebar = document.getElementById('cart-sidebar');
                     const wasOpen = !sidebar.classList.contains('translate-x-full');
