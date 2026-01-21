@@ -90,37 +90,52 @@
 
             <!-- Ringkasan Belanja (Desktop) -->
             <div class="lg:w-80 hidden lg:block">
-                <form action="{{ route('checkout.process') }}" method="POST" class="border border-dark p-6 sticky top-8 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    @csrf
-                    <input type="hidden" name="shipping_courier" value="Menyesuaikan (Hubungi Admin)">
+    <!-- Form - Satu Layer Solid dengan Border Halus & Shadow Lembut -->
+    <form action="{{ route('checkout.process') }}" method="POST" class="border border-gray-100 p-8 sticky top-8 bg-white shadow-xl rounded-none">
+        @csrf
+        <input type="hidden" name="shipping_courier" value="Menyesuaikan (Hubungi Admin)">
 
-                    <h3 class="text-xs font-black uppercase mb-6 tracking-widest text-dark border-b border-gray-100 pb-3">Ringkasan Belanja</h3>
-                    
-                    <div class="space-y-5">
-                        <div>
-                            <label class="text-[9px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Alamat Pengiriman</label>
-                            <textarea name="address" required class="w-full border border-gray-200 p-3 text-[11px] font-medium focus:outline-none focus:border-dark min-h-[100px] placeholder-gray-300" placeholder="Alamat lengkap..."></textarea>
-                        </div>
-                        <div>
-                            <label class="text-[9px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Catatan</label>
-                            <input type="text" name="note" class="w-full border border-gray-200 p-3 text-[11px] font-medium focus:outline-none focus:border-dark placeholder-gray-300" placeholder="Contoh: Pagar warna hijau">
-                        </div>
-
-                        <div class="pt-2">
-                            <div class="flex justify-between items-center mb-4">
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total</span>
-                                @php $total = $carts->sum(fn($i) => ($i->variant ? $i->variant->price : $i->product->price) * $i->quantity); @endphp
-                                <span class="text-lg font-black text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
-                            </div>
-                            
-                            <button type="submit" class="w-full bg-dark text-white py-4 font-bold uppercase tracking-widest text-[10px] hover:bg-primary transition-all flex justify-center gap-2 items-center group">
-                                <span>Checkout</span>
-                                <i class="fas fa-arrow-right text-[8px] transform group-hover:translate-x-1 transition-transform"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
+        <!-- Header - Tipografi Rapat -->
+        <h3 class="text-[10px] font-black uppercase mb-8 tracking-[0.2em] text-dark border-b border-gray-50 pb-4">
+            Ringkasan <span class="text-primary">Belanja</span>
+        </h3>
+        
+        <div class="space-y-6">
+            <!-- Input Alamat -->
+            <div>
+                <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-3">Alamat Pengiriman</label>
+                <textarea name="address" required 
+                    class="w-full bg-gray-50 border-none p-4 text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary min-h-[120px] placeholder-gray-300 uppercase tracking-tighter rounded-none" 
+                    placeholder="ALAMAT LENGKAP..."></textarea>
             </div>
+
+            <!-- Input Catatan -->
+            <div>
+                <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-3">Catatan Pesanan</label>
+                <input type="text" name="note" 
+                    class="w-full bg-gray-50 border-none p-4 text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary placeholder-gray-300 uppercase tracking-tighter rounded-none" 
+                    placeholder="CONTOH: PAGAR HIJAU">
+            </div>
+
+            <!-- Total Harga -->
+            <div class="pt-4 border-t border-gray-50">
+                <div class="flex justify-between items-end mb-6">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-gray-400">Total Tagihan</span>
+                    @php $total = $carts->sum(fn($i) => ($i->variant ? $i->variant->price : $i->product->price) * $i->quantity); @endphp
+                    <span class="text-xl font-black text-primary leading-none tracking-tighter">
+                        Rp{{ number_format($total, 0, ',', '.') }}
+                    </span>
+                </div>
+                
+                <!-- Tombol Checkout - Boxy Minimalist -->
+                <button type="submit" class="w-full bg-dark hover:bg-primary text-white py-5 font-black uppercase tracking-[0.2em] text-[10px] transition-all flex justify-center gap-3 items-center group rounded-none">
+                    <span>Checkout Sekarang</span>
+                    <i class="fas fa-arrow-right text-[8px] transform group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
         </div>
     @endif
 </div>

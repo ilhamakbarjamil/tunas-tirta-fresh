@@ -1,49 +1,56 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-2 sm:px-4 py-6 md:py-8">
+<div class="container mx-auto px-4 py-8 md:py-12">
     
-    <!-- Header Section -->
-    <div class="flex items-center justify-between mb-6 md:mb-8 border-b-2 border-gray-100 pb-4">
-        <div>
-            <h2 class="text-xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Produk Pilihan</h2>
-            <p class="text-xs md:text-gray-600 font-medium mt-1">Langsung dari kebun petani lokal.</p>
-        </div>
+    <!-- Header Section - Gaya Minimalis & Rapat -->
+    <div class="flex flex-col mb-10 border-b border-gray-100 pb-6">
+        <h2 class="text-2xl md:text-3xl font-black text-dark uppercase tracking-tighter leading-none">
+            Produk <span class="text-primary">Pilihan.</span>
+        </h2>
+        <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">
+            Langsung dari kebun petani lokal bali
+        </p>
     </div>
 
-    <!-- Product Grid: Mobile 2 Kolom, Tablet 3, Desktop 4 -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+    <!-- Product Grid: Sudut Tegas & Tanpa Rounded -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
         @foreach($products as $product)
-        <div class="bg-white rounded-xl border border-gray-200 hover:border-primary transition-all duration-200 flex flex-col justify-between group overflow-hidden relative shadow-sm hover:shadow-md">
+        <div class="bg-white border border-gray-100 flex flex-col group transition-all duration-300 hover:shadow-xl relative">
             
-            <!-- Wishlist Button & Image -->
-            <div class="p-2 md:p-4 border-b border-gray-100 bg-white relative">
-                <button class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10">
-                    <i class="far fa-heart text-sm md:text-lg"></i>
-                </button>
-
-                <a href="{{ route('products.show', $product->slug) }}" class="block overflow-hidden">
+            <!-- Image Area -->
+            <div class="aspect-square bg-gray-50 p-4 relative overflow-hidden">
+                @if($product->stock <= 0)
+                    <div class="absolute top-0 left-0 bg-dark text-white text-[8px] font-black px-2 py-1 z-10 uppercase tracking-tighter">
+                        Habis
+                    </div>
+                @endif
+                
+                <a href="{{ route('products.show', $product->slug) }}" class="block w-full h-full">
                     <img src="{{ asset('storage/' . $product->image) }}" 
                          alt="{{ $product->name }}" 
-                         class="w-full h-32 md:h-48 object-contain transform group-hover:scale-105 transition duration-300 ease-out">
+                         class="w-full h-full object-contain mix-blend-multiply transform group-hover:scale-110 transition duration-700">
                 </a>
             </div>
 
-            <!-- Product Info -->
-            <div class="p-3 md:p-4 flex-1 flex flex-col">
-                <h3 class="text-sm md:text-base font-bold text-gray-900 leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem] md:min-h-0">
-                    <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
+            <!-- Info Area -->
+            <div class="p-4 flex-1 flex flex-col">
+                <h3 class="text-[11px] font-black text-dark uppercase tracking-tighter leading-tight mb-2 min-h-[2rem]">
+                    <a href="{{ route('products.show', $product->slug) }}" class="hover:text-primary transition-colors">
+                        {{ $product->name }}
+                    </a>
                 </h3>
                 
-                <div class="mt-auto pt-2">
-                    <p class="text-sm md:text-lg font-black text-primary" id="price-display-{{ $product->id }}">
+                <div class="mt-auto">
+                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Harga</p>
+                    <p class="text-base font-black text-primary tracking-tighter" id="price-display-{{ $product->id }}">
                         Rp {{ number_format($product->price, 0, ',', '.') }}
                     </p>
                 </div>
             </div>
 
-            <!-- Footer Card: Variant & Buy Button -->
-            <div class="p-3 md:p-4 bg-gray-50 border-t border-gray-100">
+            <!-- Action Area - Kontrol Boxy -->
+            <div class="p-4 bg-white border-t border-gray-50">
                 <form action="{{ route('cart.add', $product->id) }}" method="POST">
                     @csrf
                     
@@ -51,10 +58,8 @@
                         @if($product->variants->isNotEmpty())
                             <select name="variant_id" 
                                     onchange="updatePrice(this, {{ $product->id }})" 
-                                    class="w-full bg-white border border-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-md px-2 md:px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow cursor-pointer">
-                                
-                                <option value="" data-price="{{ $product->price }}">Pilih Varian</option>
-                                
+                                    class="w-full bg-gray-50 border-none text-dark text-[10px] font-bold uppercase tracking-tighter px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-dark cursor-pointer rounded-none appearance-none">
+                                <option value="" data-price="{{ $product->price }}">PILIH VARIAN</option>
                                 @foreach($product->variants as $variant)
                                     <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
                                         {{ $variant->name }}
@@ -62,104 +67,105 @@
                                 @endforeach
                             </select>
                         @else
-                            <div class="h-[34px] md:h-[42px] w-full bg-gray-100 border border-dashed border-gray-300 rounded-md flex items-center justify-center text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                                Single Pack
+                            <div class="text-[9px] font-bold text-gray-300 uppercase tracking-widest py-2">
+                                Standard Pack
                             </div>
                         @endif
                     </div>
 
-                    <div class="flex items-center gap-1.5 md:gap-2">
-                        <input type="number" 
-                               name="quantity" 
-                               value="1" 
-                               min="1" 
-                               class="w-10 md:w-14 h-8 md:h-10 text-center text-xs md:text-base font-bold text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="quantity" value="1" min="1" 
+                               class="w-12 bg-gray-50 border-none text-center text-xs font-black text-dark py-2.5 focus:outline-none focus:ring-1 focus:ring-dark rounded-none">
 
                         @if($product->stock > 0)
-                            <button type="submit" class="flex-1 bg-gray-900 hover:bg-primary text-white font-bold h-8 md:h-10 rounded-md transition-colors duration-200 flex items-center justify-center gap-1 md:gap-2">
-                                <span class="text-[10px] md:text-sm">TAMBAH</span>
-                                <i class="fas fa-plus text-[10px]"></i>
+                            <button type="submit" class="flex-1 bg-dark hover:bg-primary text-white font-black py-2.5 transition-colors duration-300 flex items-center justify-center gap-2 rounded-none">
+                                <span class="text-[10px] uppercase tracking-widest">Tambah</span>
+                                <i class="fas fa-plus text-[8px]"></i>
                             </button>
                         @else
-                            <button type="button" disabled class="flex-1 bg-gray-200 text-gray-400 font-bold h-8 md:h-10 rounded-md cursor-not-allowed text-[10px] md:text-sm uppercase">
+                            <button type="button" disabled class="flex-1 bg-gray-100 text-gray-300 font-black py-2.5 text-[10px] uppercase tracking-widest rounded-none cursor-not-allowed">
                                 Habis
                             </button>
                         @endif
                     </div>
                 </form>
             </div>
-
         </div>
         @endforeach
     </div>
 </div>
 
-<!-- Modal Promo: Responsive Optimization -->
+<!-- Promo Modal - Rombak Total Gaya Minimalis -->
+<!-- Promo Modal - SINGLE LAYER BOXY -->
 @if($activePromo)
 <div id="promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-900 bg-opacity-80 transition-opacity backdrop-blur-sm" onclick="closePromo()"></div>
+    <!-- Overlay Gelap (Backdrop) -->
+    <div class="absolute inset-0 bg-dark/80 backdrop-blur-sm transition-opacity" onclick="closePromo()"></div>
 
-    <div class="relative bg-white w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto md:overflow-visible" id="promo-content">
+    <!-- Kontainer Modal - Satu Layer Solid -->
+    <div class="relative bg-white w-full max-w-5xl flex flex-col md:flex-row shadow-2xl rounded-none overflow-hidden border-none transform scale-95 transition-all duration-500" id="promo-content">
         
-        <button onclick="closePromo()" class="absolute top-2 right-2 md:top-4 md:right-4 z-20 bg-white text-gray-800 hover:bg-red-500 hover:text-white w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition border border-gray-200 shadow-sm">
-            <i class="fas fa-times text-sm md:text-lg"></i>
+        <!-- Tombol Tutup - Menyatu dengan Kontainer -->
+        <button onclick="closePromo()" class="absolute top-0 right-0 z-50 bg-dark text-white w-10 h-10 flex items-center justify-center hover:bg-primary transition-colors">
+            <i class="fas fa-times text-sm"></i>
         </button>
 
-        <!-- Promo Image -->
-        <div class="w-full md:w-1/2 relative bg-gray-100 min-h-[200px] md:min-h-[400px]">
+        <!-- AREA GAMBAR -->
+        <div class="w-full md:w-1/2 bg-gray-100 relative min-h-[250px] md:min-h-[500px]">
             @if($activePromo->image)
                 <img src="{{ asset('storage/' . $activePromo->image) }}" 
-                     alt="{{ $activePromo->title }}" 
-                     class="absolute inset-0 w-full h-full object-cover">
+                     class="absolute inset-0 w-full h-full object-cover" 
+                     alt="{{ $activePromo->title }}">
                 
-                <div class="absolute top-0 left-0 bg-primary text-white font-bold px-4 py-1.5 md:px-6 md:py-2 text-[10px] md:text-xs uppercase tracking-widest shadow-lg">
-                    Limited Offer
-                </div>
-            @else
-                <div class="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-400">
-                    <i class="fas fa-image text-4xl"></i>
+                <!-- Tag Announcement -->
+                <div class="absolute top-4 left-4 bg-primary text-white font-black px-3 py-1 text-[8px] uppercase tracking-[0.2em]">
+                    Announcement
                 </div>
             @endif
         </div>
 
-        <!-- Promo Text -->
-        <div class="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center text-left bg-white relative">
-            <span class="text-primary font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs mb-2 md:mb-3 block">
-                Official Announcement
-            </span>
+        <!-- AREA TEKS -->
+        <div class="w-full md:w-1/2 p-8 md:p-14 flex flex-col justify-center bg-white">
+            <div class="space-y-6">
+                <div>
+                    <span class="text-primary font-black tracking-[0.3em] uppercase text-[9px] mb-2 block">
+                        Official Info
+                    </span>
+                    <h2 class="text-3xl md:text-4xl font-black text-dark leading-[0.9] uppercase tracking-tighter">
+                        {{ $activePromo->title }}
+                    </h2>
+                </div>
 
-            <h2 class="text-2xl md:text-4xl font-black text-gray-900 leading-tight mb-3 md:mb-4 uppercase">
-                {{ $activePromo->title }}
-            </h2>
+                <div class="w-10 h-[2px] bg-primary"></div>
 
-            <div class="w-16 md:w-20 h-1 md:h-1.5 bg-primary mb-4 md:mb-6"></div>
+                <p class="text-gray-500 text-[12px] font-bold leading-relaxed uppercase tracking-tight text-justify">
+                    {{ $activePromo->description }}
+                </p>
 
-            <p class="text-gray-600 text-xs md:text-base leading-relaxed mb-6 md:mb-8">
-                {{ $activePromo->description }}
-            </p>
-
-            <div class="mt-auto">
-                @if($activePromo->button_link)
-                    <a href="{{ url($activePromo->button_link) }}" class="block w-full bg-gray-900 hover:bg-primary text-white text-center font-bold py-3 md:py-4 text-sm md:text-base uppercase tracking-wider transition-colors duration-300">
-                        {{ $activePromo->button_text }} &nbsp; <i class="fas fa-arrow-right ml-2 text-xs"></i>
-                    </a>
-                @else
-                    <button onclick="closePromo()" class="block w-full bg-gray-900 hover:bg-primary text-white text-center font-bold py-3 md:py-4 text-sm md:text-base uppercase tracking-wider transition-colors duration-300">
-                        {{ $activePromo->button_text }}
+                <div class="pt-4 space-y-4">
+                    @if($activePromo->button_link)
+                        <a href="{{ url($activePromo->button_link) }}" class="block w-full bg-dark hover:bg-primary text-white text-center font-black py-4 text-[10px] uppercase tracking-[0.2em] transition-all group">
+                            {{ $activePromo->button_text }} 
+                            <i class="fas fa-arrow-right ml-2 text-[8px] transform group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    @else
+                        <button onclick="closePromo()" class="block w-full bg-dark hover:bg-primary text-white text-center font-black py-4 text-[10px] uppercase tracking-[0.2em] transition-all">
+                            {{ $activePromo->button_text }}
+                        </button>
+                    @endif
+                    
+                    <button onclick="closePromo()" class="block w-full text-center text-gray-300 text-[9px] font-black uppercase tracking-widest hover:text-dark transition-colors">
+                        Abaikan Pesan Ini
                     </button>
-                @endif
-                
-                <button onclick="closePromo()" class="block w-full text-center text-gray-400 text-[10px] md:text-xs font-medium mt-4 hover:text-gray-600 underline">
-                    Tutup / Abaikan
-                </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 @endif
 
-<!-- Scripts -->
 <script>
+    // Logic modal & update price tetap sama, hanya menyesuaikan ID jika perlu
     document.addEventListener("DOMContentLoaded", function() {
         const currentPromoId = "{{ $activePromo ? $activePromo->id : 'none' }}";
         const lastSeenId = sessionStorage.getItem('last_seen_promo_id');
@@ -175,7 +181,7 @@
                         content.classList.add('scale-100');
                     }, 50);
                 }
-            }, 1000);
+            }, 800);
         }
     });
 

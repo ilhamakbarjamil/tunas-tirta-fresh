@@ -88,7 +88,7 @@
             <!-- Card Footer: Total & Actions -->
             <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="w-full md:w-auto text-center md:text-left">
-                    <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tagihan</p>
+                    <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Bayar</p>
                     <p class="text-lg md:text-xl font-black text-primary">
                         Rp {{ number_format($order->total_price, 0, ',', '.') }}
                     </p>

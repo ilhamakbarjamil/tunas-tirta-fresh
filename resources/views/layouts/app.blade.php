@@ -16,14 +16,14 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#FF69B4', 
-                        primaryDark: '#FF1493', 
+                        primary: '#59A6A1', // Pantone 16-5127 TCX Ceramic
+                        primaryDark: '#3F7A76', // Darker Ceramic for hover
                         secondary: '#D32F2F', 
                         dark: '#111827', 
                         medium: '#4B5563', 
                         light: '#F3F4F6', 
                         border: '#E5E7EB', 
-                        highlight: '#FFE4E1', 
+                        highlight: '#E9F3F2', // Light Ceramic tint
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -140,6 +140,7 @@
                     
                     <button onclick="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded transition-colors">
                         <i class="fas fa-shopping-bag text-gray-800 text-lg md:text-xl"></i>
+                         <span class="text-gray-800 font-medium text-base md:text-lg hidden xs:block">Cart</span>
                         @auth
                             @if (Auth::user()->carts()->count() > 0)
                                 <span class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white">
