@@ -24,9 +24,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // LOGIKA: Jika APP_URL di .env mengandung 'ngrok', paksa pakai HTTPS
-        if (str_contains(config('app.url'), 'ngrok')) {
-            URL::forceScheme('https');
-        }
+        // if (str_contains(config('app.url'), 'ngrok')) {
+        //     URL::forceScheme('https');
+        // }
         
         try {
             View::share('globalCategories', Category::all());

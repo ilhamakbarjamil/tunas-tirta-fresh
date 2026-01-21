@@ -44,5 +44,6 @@ class User extends Authenticatable implements FilamentUser
     {
         // Kuncinya: Hanya user dengan role 'admin' yang boleh masuk
         return $this->role === 'admin';
+        
     }
 }
