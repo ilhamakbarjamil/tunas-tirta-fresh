@@ -29,9 +29,9 @@ class OrderResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('user_id')
                                     ->relationship('user', 'name')
-                                    ->disabled() 
+                                    ->disabled()
                                     ->label('Pelanggan'),
-                                
+
                                 Forms\Components\Select::make('status')
                                     ->options([
                                         'pending' => 'Pending (Belum Dibayar)',
@@ -57,7 +57,7 @@ class OrderResource extends Resource
                                     ->rows(3)
                                     ->columnSpanFull()
                                     ->disabled(), // Admin cuma baca, biar gak salah ubah
-                                
+
                                 Forms\Components\Textarea::make('note')
                                     ->label('Catatan User')
                                     ->placeholder('Tidak ada catatan')
@@ -78,7 +78,7 @@ class OrderResource extends Resource
                                             ->relationship('product', 'name')
                                             ->label('Produk')
                                             ->disabled(),
-                                        
+
                                         Forms\Components\TextInput::make('quantity')
                                             ->label('Qty')
                                             ->suffix('x')
@@ -105,7 +105,7 @@ class OrderResource extends Resource
                     ->label('Order ID')
                     ->sortable()
                     ->searchable(),
-                
+
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Pelanggan')
                     ->searchable(),
@@ -114,7 +114,7 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('address')
                     ->label('Alamat Tujuan')
                     ->limit(20) // Biar tabel gak kepanjangan
-                    ->tooltip(fn ($state) => $state), // Hover buat lihat full
+                    ->tooltip(fn($state) => $state), // Hover buat lihat full
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->money('IDR')
@@ -122,12 +122,14 @@ class OrderResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'processed' => 'info',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                    }),
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',   // Kuning
+                        'paid' => 'success',      // Hijau (Ini yang tadi bikin error)
+                        'processing' => 'info',   // Biru
+                        'cancelled' => 'danger',  // Merah
+                        default => 'gray',        // <-- PENTING: Penyelamat kalau ada status aneh
+                    })
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

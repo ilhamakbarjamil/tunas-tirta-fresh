@@ -183,8 +183,8 @@
                         <span class="font-black text-xl text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
                     </div>
                     <button type="submit" class="w-full bg-dark text-white py-4 font-bold uppercase tracking-widest text-[10px] hover:bg-primary transition-all flex justify-center gap-2 items-center">
-                        <span>Lanjut ke WhatsApp</span>
-                        <i class="fab fa-whatsapp text-sm"></i>
+                        <span>Bayar Sekarang (Xendit)</span>
+                        <i class="fas fa-credit-card"></i>
                     </button>
                 </div>
             </form>

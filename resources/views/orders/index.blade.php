@@ -40,7 +40,7 @@
                         <span class="inline-block bg-yellow-500 text-white text-[9px] md:text-[10px] font-black px-3 py-1.5 uppercase tracking-widest shadow-sm rounded">
                             Menunggu Pembayaran
                         </span>
-                    @elseif($order->status == 'processed')
+                    @elseif($order->status == 'paid')
                         <span class="inline-block bg-blue-600 text-white text-[9px] md:text-[10px] font-black px-3 py-1.5 uppercase tracking-widest shadow-sm rounded">
                             Diproses
                         </span>
