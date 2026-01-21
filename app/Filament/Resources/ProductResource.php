@@ -84,6 +84,34 @@ class ProductResource extends Resource
                             ->numeric()
                             ->default(999),
 
+                        Forms\Components\Section::make('Variasi Produk (Opsional)')
+    ->description('Klik tombol "Tambah Varian" jika produk memiliki pilihan (misal: 1kg, 500gr, Keranjang).')
+    ->schema([
+        Forms\Components\Repeater::make('variants')
+            ->label('Daftar Varian')
+            ->relationship() // Pastikan Model Product punya hasMany('variants')
+            ->schema([
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Varian')
+                    ->placeholder('Contoh: 1 Kg')
+                    ->required(),
+
+                Forms\Components\TextInput::make('price')
+                    ->label('Harga')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->required(),
+
+                Forms\Components\TextInput::make('stock')
+                    ->label('Stok')
+                    ->numeric()
+                    ->default(10),
+            ])
+            ->columns(3) // Tampilan berjejer 3 kolom
+            ->defaultItems(0) // Default kosong
+            ->addActionLabel('Tambah Varian Baru')
+    ])->columnSpanFull(),
+
                         // Deskripsi
                         Forms\Components\Textarea::make('description')
                             ->label('Deskripsi Singkat')
