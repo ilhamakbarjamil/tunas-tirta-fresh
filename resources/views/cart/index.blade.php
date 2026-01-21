@@ -3,7 +3,6 @@
 @section('content')
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 sm:pb-12">
     
-    <!-- Header: Consistent with layout.txt -->
     <div class="py-8 sm:py-12 mb-8">
         <h2 class="text-3xl sm:text-4xl font-black text-dark uppercase tracking-tight">
             Keranjang <span class="text-primary">({{ $carts->count() }})</span>
@@ -24,25 +23,24 @@
 
         <div class="flex flex-col lg:flex-row gap-12">
 
-            <!-- Daftar Produk -->
             <div class="flex-1">
                 <div class="space-y-0 border-t border-gray-100">
                     @foreach($carts as $cart)
                         <div class="flex items-center gap-4 sm:gap-6 py-6 border-b border-gray-100 group">
-                            <!-- Image: Consistent styling -->
                             <div class="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-50 border border-gray-100 rounded-lg p-2 overflow-hidden relative">
-                                <img src="{{ asset('storage/' . $cart->product->image) }}" alt="{{ $cart->product->name }}" 
-                                     class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                                @if($cart->product->image)
+                                    <img src="{{ asset('storage/' . $cart->product->image) }}" alt="{{ $cart->product->name }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fas fa-image"></i></div>
+                                @endif
                             </div>
 
-                            <!-- Details -->
                             <div class="flex-1 flex flex-col h-24 sm:h-32 justify-between py-1">
                                 <div>
                                     <div class="flex justify-between items-start">
                                         <h3 class="text-sm sm:text-base font-bold uppercase leading-none tracking-tight text-dark group-hover:text-primary transition-colors">
                                             {{ $cart->product->name }}
                                         </h3>
-                                        <!-- Hapus Button -->
                                         <form action="{{ route('cart.destroy', $cart->id) }}" method="POST" class="ml-2">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors">
@@ -56,7 +54,6 @@
                                 </div>
 
                                 <div class="flex justify-between items-end">
-                                    <!-- Stepper: Consistent with layout design -->
                                     <div class="flex items-center border border-gray-200 rounded h-8 sm:h-10 overflow-hidden bg-white">
                                         <form action="{{ route('cart.decrease', $cart->id) }}" method="POST">
                                             @csrf
@@ -84,20 +81,22 @@
                 </div>
             </div>
 
-            <!-- Sidebar: Checkout (Desktop) -->
             <div class="lg:w-96 hidden lg:block">
-                <div class="border border-gray-200 rounded-xl p-6 sticky top-8 shadow-card bg-white">
+                <form action="{{ route('checkout.process') }}" method="POST" class="border border-gray-200 rounded-xl p-6 sticky top-8 shadow-card bg-white">
+                    @csrf
+                    <input type="hidden" name="shipping_courier" value="Menyesuaikan (Hubungi Admin)">
+
                     <h3 class="text-xl font-black uppercase mb-6 tracking-tight text-dark">Ringkasan Belanja</h3>
                     
                     <div class="space-y-6">
                         <div class="space-y-4">
                             <div>
                                 <label class="text-[10px] font-black uppercase tracking-widest text-medium block mb-2">Alamat Pengiriman</label>
-                                <textarea id="desktop-address" name="address" required class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none min-h-[100px] transition-colors" placeholder="Masukkan alamat lengkap..."></textarea>
+                                <textarea name="address" required class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none min-h-[100px] transition-colors" placeholder="Masukkan alamat lengkap..."></textarea>
                             </div>
                             <div>
                                 <label class="text-[10px] font-black uppercase tracking-widest text-medium block mb-2">Catatan</label>
-                                <input type="text" id="desktop-note" name="note" class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none transition-colors" placeholder="Contoh: Pagar hitam">
+                                <input type="text" name="note" class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none transition-colors" placeholder="Contoh: Pagar hitam">
                             </div>
                         </div>
 
@@ -107,19 +106,20 @@
                                 @php $total = $carts->sum(fn($i) => ($i->variant ? $i->variant->price : $i->product->price) * $i->quantity); @endphp
                                 <span class="text-2xl font-black text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
                             </div>
-                            <button type="button" onclick="sendToWhatsApp('desktop')" class="w-full bg-dark text-white py-4 rounded-lg font-black uppercase tracking-wide hover:bg-primary transition-all active:scale-[0.98] shadow-soft">
-                                Bayar Sekarang
+                            
+                            <button type="submit" class="w-full bg-dark text-white py-4 rounded-lg font-black uppercase tracking-wide hover:bg-primary transition-all active:scale-[0.98] shadow-soft flex justify-center gap-2 items-center">
+                                <span>Bayar & Chat WA</span>
+                                <i class="fab fa-whatsapp text-lg"></i>
                             </button>
                         </div>
                     </div>
-                </div>
+                </form>
             </div>
 
         </div>
     @endif
 </div>
 
-<!-- Mobile Sticky Bottom Bar: Consistent Design -->
 @if(!$carts->isEmpty())
 <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 lg:hidden z-50 shadow-mega">
     <div class="max-w-xl mx-auto">
@@ -133,17 +133,18 @@
             </button>
         </div>
         
-        <!-- Form Checkout Tersembunyi di Mobile Drawer -->
         <div id="mobile-drawer" class="fixed inset-0 bg-white z-[60] transform translate-y-full transition-transform duration-300 p-6 flex flex-col">
             <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
                 <h3 class="font-black uppercase text-xl text-dark tracking-tight">Lengkapi Data</h3>
-                <button onclick="document.getElementById('mobile-drawer').classList.toggle('translate-y-0')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                <button type="button" onclick="document.getElementById('mobile-drawer').classList.toggle('translate-y-0')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <i class="fas fa-times text-medium"></i>
                 </button>
             </div>
-            
+
             <form action="{{ route('checkout.process') }}" method="POST" class="flex flex-col h-full">
                 @csrf
+                <input type="hidden" name="shipping_courier" value="Menyesuaikan (Hubungi Admin)">
+
                 <div class="flex-1 space-y-6">
                     <div>
                         <label class="text-[10px] font-black uppercase tracking-widest text-medium block mb-2">Alamat Lengkap</label>
@@ -160,8 +161,9 @@
                         <span class="font-bold uppercase text-medium text-sm">Total</span>
                         <span class="font-black text-2xl text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
                     </div>
-                    <button type="button" onclick="sendToWhatsApp('mobile')" class="w-full bg-dark text-white py-5 font-black uppercase tracking-wide text-sm rounded-lg shadow-soft hover:bg-primary active:scale-[0.98] transition-all">
-                        Konfirmasi & Bayar
+                    <button type="submit" class="w-full bg-dark text-white py-5 font-black uppercase tracking-wide text-sm rounded-lg shadow-soft hover:bg-primary active:scale-[0.98] transition-all flex justify-center gap-2 items-center">
+                        <span>Lanjut ke WhatsApp</span>
+                        <i class="fab fa-whatsapp text-lg"></i>
                     </button>
                 </div>
             </form>
@@ -173,73 +175,4 @@
     </div>
 </div>
 @endif
-
-<script>
-function sendToWhatsApp(source) {
-    // Validasi form
-    const addressField = source === 'desktop' 
-        ? document.getElementById('desktop-address')
-        : document.querySelector('#mobile-drawer textarea[name="address"]');
-    
-    const noteField = source === 'desktop'
-        ? document.getElementById('desktop-note')
-        : document.querySelector('#mobile-drawer input[name="note"]');
-    
-    const address = addressField.value.trim();
-    const note = noteField.value.trim();
-    
-    if (!address) {
-        alert('Mohon isi alamat pengiriman terlebih dahulu!');
-        addressField.focus();
-        return;
-    }
-    
-    // Data keranjang dari PHP
-    const cartItems = {!! json_encode($carts->map(function($cart) {
-        return [
-            'name' => $cart->product->name,
-            'variant' => $cart->variant ? $cart->variant->name : 'Standard Pack',
-            'quantity' => $cart->quantity,
-            'price' => $cart->variant ? $cart->variant->price : $cart->product->price,
-        ];
-    })) !!};
-    
-    const total = {{ isset($total) ? $total : 0 }};
-    
-    // Format pesan WhatsApp
-    let message = "*🛒 PESANAN BARU - Tunas Tirta Fresh*\n\n";
-    message += "━━━━━━━━━━━━━━━━━━━━\n";
-    message += "*Detail Pesanan:*\n\n";
-    
-    cartItems.forEach((item, index) => {
-        message += `${index + 1}. *${item.name}*\n`;
-        message += `   Varian: ${item.variant}\n`;
-        message += `   Jumlah: ${item.quantity}x\n`;
-        message += `   Harga: Rp ${item.price.toLocaleString('id-ID')}\n`;
-        message += `   Subtotal: Rp ${(item.price * item.quantity).toLocaleString('id-ID')}\n\n`;
-    });
-    
-    message += "━━━━━━━━━━━━━━━━━━━━\n";
-    message += `*Total Pembayaran: Rp ${total.toLocaleString('id-ID')}*\n`;
-    message += "━━━━━━━━━━━━━━━━━━━━\n\n";
-    message += `📍 *Alamat Pengiriman:*\n${address}\n\n`;
-    
-    if (note) {
-        message += `📝 *Catatan:*\n${note}\n\n`;
-    }
-    
-    message += "━━━━━━━━━━━━━━━━━━━━\n";
-    message += "Mohon konfirmasi pesanan ini. Terima kasih! 🙏";
-    
-    // Encode pesan untuk URL
-    const encodedMessage = encodeURIComponent(message);
-    
-    // Nomor WhatsApp dari .env (tanpa +)
-    const whatsappNumber = "{{ env('WHATSAPP_ADMIN', '6281331921019') }}";
-    
-    // Redirect ke WhatsApp
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
-}
-</script>
 @endsection
