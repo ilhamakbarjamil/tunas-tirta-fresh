@@ -33,7 +33,7 @@
             <!-- Header -->
             <div class="mb-12">
                 <div class="mb-8">
-                    <img src="{{ asset('images/logo.png') }}" class="h-7 w-auto" alt="Logo">
+                    <!-- <img src="{{ asset('images/logo.png') }}" class="h-7 w-auto" alt="Logo"> -->
                 </div>
                 <h1 class="text-4xl font-black text-dark uppercase leading-none tracking-tighter mb-2">
                     Selamat <span class="text-primary"> Datang.</span>
