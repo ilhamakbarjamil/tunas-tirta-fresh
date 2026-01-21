@@ -5,7 +5,7 @@
     
     <!-- Header: Consistent with layout.txt -->
     <div class="py-8 sm:py-12 mb-8">
-        <h2 class="text-xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+        <h2 class="text-3xl sm:text-4xl font-black text-dark uppercase tracking-tight">
             Keranjang <span class="text-primary">({{ $carts->count() }})</span>
         </h2>
     </div>
@@ -89,16 +89,15 @@
                 <div class="border border-gray-200 rounded-xl p-6 sticky top-8 shadow-card bg-white">
                     <h3 class="text-xl font-black uppercase mb-6 tracking-tight text-dark">Ringkasan Belanja</h3>
                     
-                    <form action="{{ route('checkout.process') }}" method="POST" class="space-y-6">
-                        @csrf
+                    <div class="space-y-6">
                         <div class="space-y-4">
                             <div>
                                 <label class="text-[10px] font-black uppercase tracking-widest text-medium block mb-2">Alamat Pengiriman</label>
-                                <textarea name="address" required class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none min-h-[100px] transition-colors" placeholder="Masukkan alamat lengkap..."></textarea>
+                                <textarea id="desktop-address" name="address" required class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none min-h-[100px] transition-colors" placeholder="Masukkan alamat lengkap..."></textarea>
                             </div>
                             <div>
                                 <label class="text-[10px] font-black uppercase tracking-widest text-medium block mb-2">Catatan</label>
-                                <input type="text" name="note" class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none transition-colors" placeholder="Contoh: Pagar hitam">
+                                <input type="text" id="desktop-note" name="note" class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-primary outline-none transition-colors" placeholder="Contoh: Pagar hitam">
                             </div>
                         </div>
 
@@ -108,11 +107,11 @@
                                 @php $total = $carts->sum(fn($i) => ($i->variant ? $i->variant->price : $i->product->price) * $i->quantity); @endphp
                                 <span class="text-2xl font-black text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
                             </div>
-                            <button type="submit" class="w-full bg-dark text-white py-4 rounded-lg font-black uppercase tracking-wide hover:bg-primary transition-all active:scale-[0.98] shadow-soft">
+                            <button type="button" onclick="sendToWhatsApp('desktop')" class="w-full bg-dark text-white py-4 rounded-lg font-black uppercase tracking-wide hover:bg-primary transition-all active:scale-[0.98] shadow-soft">
                                 Bayar Sekarang
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
 
@@ -161,7 +160,7 @@
                         <span class="font-bold uppercase text-medium text-sm">Total</span>
                         <span class="font-black text-2xl text-primary">Rp{{ number_format($total, 0, ',', '.') }}</span>
                     </div>
-                    <button type="submit" class="w-full bg-dark text-white py-5 font-black uppercase tracking-wide text-sm rounded-lg shadow-soft hover:bg-primary active:scale-[0.98] transition-all">
+                    <button type="button" onclick="sendToWhatsApp('mobile')" class="w-full bg-dark text-white py-5 font-black uppercase tracking-wide text-sm rounded-lg shadow-soft hover:bg-primary active:scale-[0.98] transition-all">
                         Konfirmasi & Bayar
                     </button>
                 </div>
@@ -174,4 +173,73 @@
     </div>
 </div>
 @endif
+
+<script>
+function sendToWhatsApp(source) {
+    // Validasi form
+    const addressField = source === 'desktop' 
+        ? document.getElementById('desktop-address')
+        : document.querySelector('#mobile-drawer textarea[name="address"]');
+    
+    const noteField = source === 'desktop'
+        ? document.getElementById('desktop-note')
+        : document.querySelector('#mobile-drawer input[name="note"]');
+    
+    const address = addressField.value.trim();
+    const note = noteField.value.trim();
+    
+    if (!address) {
+        alert('Mohon isi alamat pengiriman terlebih dahulu!');
+        addressField.focus();
+        return;
+    }
+    
+    // Data keranjang dari PHP
+    const cartItems = {!! json_encode($carts->map(function($cart) {
+        return [
+            'name' => $cart->product->name,
+            'variant' => $cart->variant ? $cart->variant->name : 'Standard Pack',
+            'quantity' => $cart->quantity,
+            'price' => $cart->variant ? $cart->variant->price : $cart->product->price,
+        ];
+    })) !!};
+    
+    const total = {{ isset($total) ? $total : 0 }};
+    
+    // Format pesan WhatsApp
+    let message = "*🛒 PESANAN BARU - Tunas Tirta Fresh*\n\n";
+    message += "━━━━━━━━━━━━━━━━━━━━\n";
+    message += "*Detail Pesanan:*\n\n";
+    
+    cartItems.forEach((item, index) => {
+        message += `${index + 1}. *${item.name}*\n`;
+        message += `   Varian: ${item.variant}\n`;
+        message += `   Jumlah: ${item.quantity}x\n`;
+        message += `   Harga: Rp ${item.price.toLocaleString('id-ID')}\n`;
+        message += `   Subtotal: Rp ${(item.price * item.quantity).toLocaleString('id-ID')}\n\n`;
+    });
+    
+    message += "━━━━━━━━━━━━━━━━━━━━\n";
+    message += `*Total Pembayaran: Rp ${total.toLocaleString('id-ID')}*\n`;
+    message += "━━━━━━━━━━━━━━━━━━━━\n\n";
+    message += `📍 *Alamat Pengiriman:*\n${address}\n\n`;
+    
+    if (note) {
+        message += `📝 *Catatan:*\n${note}\n\n`;
+    }
+    
+    message += "━━━━━━━━━━━━━━━━━━━━\n";
+    message += "Mohon konfirmasi pesanan ini. Terima kasih! 🙏";
+    
+    // Encode pesan untuk URL
+    const encodedMessage = encodeURIComponent(message);
+    
+    // Nomor WhatsApp dari .env (tanpa +)
+    const whatsappNumber = "{{ env('WHATSAPP_ADMIN', '6281331921019') }}";
+    
+    // Redirect ke WhatsApp
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+}
+</script>
 @endsection
