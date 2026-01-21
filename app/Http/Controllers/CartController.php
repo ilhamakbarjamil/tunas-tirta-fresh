@@ -23,30 +23,30 @@ class CartController extends Controller
     // 2. Tambah Barang ke Keranjang (INI YANG TADI HILANG)
     public function add(Request $request, $productId)
     {
-        $user = Auth::user();
-        $quantity = $request->input('quantity', 1);
-        $variantId = $request->input('variant_id'); // Ambil ID varian jika ada
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Silakan login dulu.');
+        }
 
-        // Cek apakah barang yang sama (dan varian sama) sudah ada?
+        $user = Auth::user();
+        $variantId = $request->input('variant_id');
+
         $existingCart = Cart::where('user_id', $user->id)
             ->where('product_id', $productId)
-            ->where('variant_id', $variantId)
+            ->where('product_variant_id', $variantId)
             ->first();
 
         if ($existingCart) {
-            // Kalau sudah ada, tambahkan jumlahnya saja
-            $existingCart->increment('quantity', $quantity);
+            $existingCart->increment('quantity', $request->input('quantity', 1));
         } else {
-            // Kalau belum, buat baru
             Cart::create([
                 'user_id' => $user->id,
                 'product_id' => $productId,
-                'variant_id' => $variantId,
-                'quantity' => $quantity
+                'product_variant_id' => $variantId,
+                'quantity' => $request->input('quantity', 1)
             ]);
         }
 
-        return redirect()->back()->with('success', 'Produk berhasil masuk keranjang!');
+        return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
     }
 
     // 3. Update Jumlah (Tombol +/- di Keranjang)
