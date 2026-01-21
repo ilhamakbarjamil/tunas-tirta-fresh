@@ -15,6 +15,7 @@ class CartController extends Controller
     {
         $carts = Auth::user()->carts()->with(['product', 'variant'])->get();
         return view('cart.index', compact('carts'));
+        // return view('orders.index', compact('orders'));
     }
 
     public function add(Request $request, $productId)
