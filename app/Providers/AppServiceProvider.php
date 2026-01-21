@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View; 
 use App\Models\Category;
 use App\Models\Announcement;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // LOGIKA: Jika APP_URL di .env mengandung 'ngrok', paksa pakai HTTPS
+        if (str_contains(config('app.url'), 'ngrok')) {
+            URL::forceScheme('https');
+        }
+        
         try {
             View::share('globalCategories', Category::all());
         } catch (\Exception $e) {
