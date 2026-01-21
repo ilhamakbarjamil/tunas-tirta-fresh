@@ -1,79 +1,83 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Breadcrumb - Dioptimalkan untuk mobile (scrollable jika terlalu panjang) -->
 <div class="border-b border-gray-200 bg-white">
-    <div class="container mx-auto px-4 py-4">
-        <nav class="flex text-xs font-bold uppercase tracking-widest text-gray-500">
+    <div class="container mx-auto px-4 py-3 md:py-4">
+        <nav class="flex text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500 overflow-x-auto whitespace-nowrap scrollbar-hide">
             <a href="{{ route('home') }}" class="hover:text-dark transition-colors">Home</a> 
-            <span class="mx-3 text-gray-300">/</span> 
+            <span class="mx-2 md:mx-3 text-gray-300">/</span> 
             <a href="#" class="hover:text-dark transition-colors">{{ $product->category->name ?? 'Product' }}</a>
-            <span class="mx-3 text-gray-300">/</span> 
+            <span class="mx-2 md:mx-3 text-gray-300">/</span> 
             <span class="text-dark">{{ $product->name }}</span>
         </nav>
     </div>
 </div>
 
-<div class="container mx-auto px-4 py-12">
-    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+<div class="container mx-auto px-4 py-6 md:py-12">
+    <div class="flex flex-col lg:flex-row gap-8 lg:gap-16">
         
+        <!-- Kolom Gambar -->
         <div class="w-full lg:w-7/12">
-            <div class="bg-gray-50 border border-gray-100 rounded-lg p-10 flex justify-center items-center relative overflow-hidden group">
+            <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 sm:p-10 flex justify-center items-center relative overflow-hidden group min-h-[300px] md:min-h-[500px]">
                 @if($product->stock <= 5 && $product->stock > 0)
-                    <div class="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
+                    <div class="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider z-10">
                         Stok Menipis
                     </div>
                 @elseif($product->stock > 5)
-                    <div class="absolute top-4 left-4 bg-primary text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
+                    <div class="absolute top-4 left-4 bg-primary text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider z-10">
                         Ready Stock
                     </div>
                 @endif
 
                 <img src="{{ asset('storage/' . $product->image) }}" 
                      alt="{{ $product->name }}" 
-                     class="max-h-[500px] w-auto object-contain drop-shadow-md transform transition duration-700 group-hover:scale-105">
+                     class="max-h-[300px] md:max-h-[500px] w-auto object-contain drop-shadow-md transform transition duration-700 group-hover:scale-105">
             </div>
 
-            <div class="grid grid-cols-3 gap-4 mt-6">
-                <div class="border border-gray-200 p-4 text-center rounded hover:border-dark transition-colors">
-                    <i class="fas fa-truck-fast text-2xl text-dark mb-2"></i>
-                    <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Kirim Cepat</p>
+            <!-- Fitur Tambahan - Grid Responsive -->
+            <!-- <div class="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
+                <div class="border border-gray-200 p-3 md:p-4 text-center rounded hover:border-dark transition-colors">
+                    <i class="fas fa-truck-fast text-lg md:text-2xl text-dark mb-1 md:mb-2"></i>
+                    <p class="text-[8px] md:text-[10px] font-bold uppercase tracking-wide text-gray-500">Kirim Cepat</p>
                 </div>
-                <div class="border border-gray-200 p-4 text-center rounded hover:border-dark transition-colors">
-                    <i class="fas fa-leaf text-2xl text-dark mb-2"></i>
-                    <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">100% Segar</p>
+                <div class="border border-gray-200 p-3 md:p-4 text-center rounded hover:border-dark transition-colors">
+                    <i class="fas fa-leaf text-lg md:text-2xl text-dark mb-1 md:mb-2"></i>
+                    <p class="text-[8px] md:text-[10px] font-bold uppercase tracking-wide text-gray-500">100% Segar</p>
                 </div>
-                <div class="border border-gray-200 p-4 text-center rounded hover:border-dark transition-colors">
-                    <i class="fas fa-shield-alt text-2xl text-dark mb-2"></i>
-                    <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Garansi</p>
+                <div class="border border-gray-200 p-3 md:p-4 text-center rounded hover:border-dark transition-colors">
+                    <i class="fas fa-shield-alt text-lg md:text-2xl text-dark mb-1 md:mb-2"></i>
+                    <p class="text-[8px] md:text-[10px] font-bold uppercase tracking-wide text-gray-500">Garansi</p>
                 </div>
-            </div>
+            </div> -->
         </div>
 
+        <!-- Kolom Informasi Produk -->
         <div class="w-full lg:w-5/12 flex flex-col">
             
-            <h1 class="text-4xl md:text-5xl font-black text-dark uppercase leading-none mb-4 tracking-tight">
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-dark uppercase leading-tight mb-3 md:mb-4 tracking-tight">
                 {{ $product->name }}
             </h1>
 
             <div class="flex items-center gap-4 mb-6 border-b border-gray-100 pb-6">
-                <div class="flex text-yellow-500 text-sm">
+                <div class="flex text-yellow-500 text-xs md:text-sm">
                     <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                 </div>
-                <p class="text-xs font-bold uppercase tracking-wide text-gray-400">Terjual 150+ Unit</p>
+                <p class="text-[10px] md:text-xs font-bold uppercase tracking-wide text-gray-400">Terjual 150+</p>
             </div>
 
-            <div class="mb-8">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Harga Terbaik</p>
+            <div class="mb-6 md:mb-8">
+                <p class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Harga Terbaik</p>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-4xl font-black text-primary">
+                    <span class="text-3xl md:text-4xl font-black text-primary">
                         Rp {{ number_format($product->price, 0, ',', '.') }}
                     </span>
-                    <span class="text-sm font-bold text-gray-400">/ pack</span>
+                    <span class="text-xs md:text-sm font-bold text-gray-400">/ pack</span>
                 </div>
             </div>
 
-            <div class="mb-8">
-                <h3 class="text-xs font-black text-dark uppercase tracking-widest mb-3">Deskripsi Produk</h3>
+            <div class="mb-6 md:mb-8">
+                <h3 class="text-[10px] md:text-xs font-black text-dark uppercase tracking-widest mb-3">Deskripsi Produk</h3>
                 <p class="text-gray-600 text-sm leading-relaxed text-justify">
                     {{ $product->description }}
                 </p>
@@ -84,9 +88,9 @@
                 
                 @if($product->variants && $product->variants->count() > 0)
                     <div class="mb-6">
-                        <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Pilih Varian</label>
+                        <label class="block text-[10px] md:text-xs font-black text-dark uppercase tracking-widest mb-2">Pilih Varian</label>
                         <div class="relative">
-                            <select name="variant_id" class="w-full appearance-none bg-white border-2 border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors">
+                            <select name="variant_id" class="w-full appearance-none bg-white border-2 border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-sm">
                                 @foreach($product->variants as $variant)
                                     <option value="{{ $variant->id }}">
                                         {{ $variant->name }} (+ Rp {{ number_format($variant->price - $product->price, 0, ',', '.') }})
@@ -111,11 +115,10 @@
                             Stok Habis
                         </button>
                     @endif
-                    
-                    </div>
+                </div>
             </form>
             
-            <div class="mt-6 flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+            <div class="mt-6 flex items-center gap-2 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wide justify-center lg:justify-start">
                 <i class="fas fa-lock"></i> Transaksi Aman & Terenkripsi
             </div>
 
