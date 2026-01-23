@@ -66,14 +66,14 @@ class OrderController extends Controller
                         // --- KIRIM WHATSAPP KE ADMIN ---
                         // Note: Invoice URL di Midtrans (Snap) biasanya tidak disimpan permanen seperti Xendit.
                         // Jadi kita kosongkan atau ganti link ke detail web kita.
-                        $invoiceUrl = route('orders.show', $order->id); 
+                        $invoiceUrl = route('orders.show', $order->id);
                         $this->sendWhatsAppNotification($order, $invoiceUrl);
                     }
 
                 } catch (\Exception $e) {
                     // Jika error (misal Order ID belum ada di Midtrans karena user baru klik checkout tapi belum bayar)
                     // Lanjut ke order berikutnya (jangan error 500)
-                    continue; 
+                    continue;
                 }
             }
         }
@@ -83,7 +83,12 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        if ($order->user_id !== Auth::id()) {
+        // if ($order->user_id !== Auth::id()) {
+        //     abort(403);
+        // }
+
+        $user = Auth::user();
+        if ($order->user_id !== $user->id && $user->role !== 'admin') {
             abort(403);
         }
         return view('orders.show', compact('order'));
@@ -101,11 +106,11 @@ class OrderController extends Controller
         $message .= "Pembeli: " . Auth::user()->name . "\n";
         $message .= "Total Barang: Rp " . number_format($order->total_price, 0, ',', '.') . "\n";
         $message .= "Status: SUDAH DIBAYAR (via Midtrans)\n\n";
-        
+
         $message .= "*Alamat Pengiriman:* \n" . $order->address . "\n\n";
-        
+
         $message .= "🔗 *Link Detail:* \n" . $invoiceUrl . "\n\n";
-        
+
         $message .= "⚠️ *PENTING:* \n";
         $message .= "Cek Dashboard Midtrans untuk verifikasi dana masuk.";
 
@@ -114,9 +119,9 @@ class OrderController extends Controller
             Http::withHeaders([
                 'Authorization' => $token,
             ])->post('https://api.fonnte.com/send', [
-                'target' => $adminPhone,
-                'message' => $message,
-            ]);
+                        'target' => $adminPhone,
+                        'message' => $message,
+                    ]);
         } catch (\Exception $e) {
             // Log::error($e->getMessage());
         }
