@@ -56,3 +56,6 @@ Route::get('/login-admin', function () {
 // --- WEBHOOK MIDTRANS (WAJIB DILUAR AUTH) ---
 // Midtrans tidak perlu login, jadi taruh di luar middleware auth
 Route::post('payments/midtrans-notification', [PaymentCallbackController::class, 'receive']);
+
+// Route GET untuk testing/debugging (opsional, bisa dihapus di production)
+Route::get('payments/midtrans-notification', [PaymentCallbackController::class, 'test']);

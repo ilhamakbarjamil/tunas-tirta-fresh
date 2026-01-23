@@ -20,15 +20,16 @@
         <!-- Kolom Gambar -->
         <div class="w-full lg:w-7/12">
             <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 sm:p-10 flex justify-center items-center relative overflow-hidden group min-h-[300px] md:min-h-[450px]">
-                @if($product->stock <= 5 && $product->stock > 0)
-                    <div class="absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
+                <!-- Stock Badge (Dinamis berdasarkan variant yang dipilih) -->
+                <div id="stock-badge" class="absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
+                    @if($product->stock <= 5 && $product->stock > 0)
                         Stok Menipis
-                    </div>
-                @elseif($product->stock > 5)
-                    <div class="absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
+                    @elseif($product->stock > 5)
                         Ready Stock
-                    </div>
-                @endif
+                    @else
+                        Stok Habis
+                    @endif
+                </div>
 
                 <img src="{{ asset('storage/' . $product->image) }}" 
                      alt="{{ $product->name }}" 
@@ -83,14 +84,14 @@
                 <option value="" disabled selected>--- PILIH VARIAN ---</option>
 
                 <!-- 2. Pilihan Standar (Sekarang diberi value "normal" agar valid) -->
-                <option value="normal" data-price="{{ $product->price }}" data-unit="pack">
+                <option value="normal" data-price="{{ $product->price }}" data-unit="pack" data-stock="{{ $product->stock }}">
                     STANDAR (Rp {{ number_format($product->price, 0, ',', '.') }})
                 </option>
                 
                 <!-- 3. Pilihan Varian Lainnya -->
                 @if($product->variants && $product->variants->count() > 0)
                     @foreach($product->variants as $variant)
-                        <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}">
+                        <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}" data-stock="{{ $variant->stock }}">
                             {{ strtoupper($variant->name) }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
                         </option>
                     @endforeach
@@ -102,18 +103,15 @@
         </div>
     </div>
 
-    <!-- Tombol Submit (Hanya aktif jika sudah pilih) -->
+    <!-- Tombol Submit (Dinamis berdasarkan stock variant yang dipilih) -->
     <div class="hidden lg:block space-y-3">
-        @if($product->stock > 0)
-            <button type="submit" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
-                <span>Masukkan Keranjang</span>
-                <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
-            </button>
-        @else
-            <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
-                Stok Habis
-            </button>
-        @endif
+        <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
+            <span>Masukkan Keranjang</span>
+            <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
+        </button>
+        <button type="button" id="out-of-stock-btn" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed hidden">
+            Stok Habis
+        </button>
     </div>
     <!-- ... bagian sticky mobile juga menyesuaikan ... -->
 </form>
@@ -125,19 +123,42 @@
     </div>
 </div>
 
-<!-- Script untuk Update Harga secara Real-time -->
+<!-- Script untuk Update Harga dan Stock secara Real-time -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const variantSelect = document.getElementById('variant-select');
         const displayPrice = document.getElementById('display-price');
         const mobileDisplayPrice = document.getElementById('mobile-display-price');
         const displayUnit = document.getElementById('display-unit');
+        const stockBadge = document.getElementById('stock-badge');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        const outOfStockBtn = document.getElementById('out-of-stock-btn');
+
+        function updateStockBadge(stock) {
+            if (stock <= 0) {
+                stockBadge.textContent = 'Stok Habis';
+                stockBadge.className = 'absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
+                addToCartBtn.classList.add('hidden');
+                outOfStockBtn.classList.remove('hidden');
+            } else if (stock <= 5) {
+                stockBadge.textContent = 'Stok Menipis';
+                stockBadge.className = 'absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
+                addToCartBtn.classList.remove('hidden');
+                outOfStockBtn.classList.add('hidden');
+            } else {
+                stockBadge.textContent = 'Ready Stock';
+                stockBadge.className = 'absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
+                addToCartBtn.classList.remove('hidden');
+                outOfStockBtn.classList.add('hidden');
+            }
+        }
 
         variantSelect.addEventListener('change', function() {
             // Ambil data dari atribut data- di option yang dipilih
             const selectedOption = this.options[this.selectedIndex];
             const price = parseInt(selectedOption.getAttribute('data-price'));
             const unit = selectedOption.getAttribute('data-unit');
+            const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
 
             // Format Rupiah
             const formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -150,7 +171,17 @@
             displayPrice.innerText = formattedPrice;
             if(mobileDisplayPrice) mobileDisplayPrice.innerText = formattedPrice;
             displayUnit.innerText = '/ ' + unit;
+            
+            // Update Stock Badge dan Tombol
+            updateStockBadge(stock);
         });
+        
+        // Inisialisasi awal
+        const initialOption = variantSelect.options[variantSelect.selectedIndex];
+        if (initialOption) {
+            const initialStock = parseInt(initialOption.getAttribute('data-stock')) || 0;
+            updateStockBadge(initialStock);
+        }
     });
 </script>
 @endsection

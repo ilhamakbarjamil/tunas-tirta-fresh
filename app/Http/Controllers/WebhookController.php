@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -110,9 +111,18 @@ class WebhookController extends Controller
     private function reduceStock($order)
     {
         foreach ($order->items as $item) {
-            $product = Product::find($item->product_id);
-            if ($product && $product->stock >= $item->quantity) {
-                $product->decrement('stock', $item->quantity);
+            if ($item->product_variant_id) {
+                // Kurangi stok di tabel Varian
+                $variant = ProductVariant::find($item->product_variant_id);
+                if ($variant && $variant->stock >= $item->quantity) {
+                    $variant->decrement('stock', $item->quantity);
+                }
+            } else {
+                // Kurangi stok di tabel Produk Utama
+                $product = Product::find($item->product_id);
+                if ($product && $product->stock >= $item->quantity) {
+                    $product->decrement('stock', $item->quantity);
+                }
             }
         }
     }

@@ -95,6 +95,24 @@ class CartController extends Controller
         $cart = Cart::where('user_id', Auth::id())->where('id', $id)->first();
         if ($cart) {
             $qty = max(1, $request->input('quantity'));
+            
+            // Validasi stock sebelum update
+            if ($cart->product_variant_id) {
+                $maxStock = $cart->variant->stock;
+                $displayName = $cart->product->name . " (" . $cart->variant->name . ")";
+            } else {
+                $maxStock = $cart->product->stock;
+                $displayName = $cart->product->name;
+            }
+            
+            if ($maxStock <= 0) {
+                return redirect()->back()->with('error', "❌ Stok untuk $displayName saat ini habis.");
+            }
+            
+            if ($qty > $maxStock) {
+                return redirect()->back()->with('error', "❌ Stok tidak cukup. Hanya tersedia $maxStock pcs.");
+            }
+            
             $cart->update(['quantity' => $qty]);
         }
         return redirect()->back();
@@ -168,6 +186,22 @@ class CartController extends Controller
 
         if ($carts->isEmpty()) {
             return redirect()->back()->with('error', 'Keranjang kosong!');
+        }
+
+        // Validasi Stock sebelum checkout
+        foreach ($carts as $cart) {
+            if ($cart->product_variant_id) {
+                $variant = ProductVariant::find($cart->product_variant_id);
+                if (!$variant || $variant->stock < $cart->quantity) {
+                    $displayName = $cart->product->name . " (" . ($variant ? $variant->name : 'Varian') . ")";
+                    $availableStock = $variant ? $variant->stock : 0;
+                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: $availableStock pcs, dibutuhkan: {$cart->quantity} pcs.");
+                }
+            } else {
+                if ($cart->product->stock < $cart->quantity) {
+                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk {$cart->product->name}. Tersedia: {$cart->product->stock} pcs, dibutuhkan: {$cart->quantity} pcs.");
+                }
+            }
         }
 
         // Hitung Total
