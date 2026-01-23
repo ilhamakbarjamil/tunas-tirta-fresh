@@ -117,7 +117,7 @@ class CartController extends Controller
             ]);
 
             // B. Pindahkan Item ke OrderItem
-            // B. Pindahkan Item ke OrderItem
+
             foreach ($carts as $cart) {
                 $price = $cart->variant ? $cart->variant->price : $cart->product->price;
 
@@ -134,7 +134,7 @@ class CartController extends Controller
             // C. Siapkan Parameter Midtrans SNAP
             $params = [
                 'transaction_details' => [
-                    'order_id' => $order->id, // Gunakan ID dari Database
+                    'order_id' => $order->external_id, // Gunakan ID dari Database
                     'gross_amount' => (int) $totalOrder, // Wajib Integer
                 ],
                 'customer_details' => [
@@ -151,6 +151,15 @@ class CartController extends Controller
                     ]
                 ]
             ];
+
+            if (env('APP_ENV') === 'local') {
+                \Midtrans\Config::$curlOptions = [
+                    CURLOPT_SSL_VERIFYPEER => false, // Matikan SSL biar CURL lancar di laptop
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                    CURLOPT_CONNECTTIMEOUT => 30,
+                    CURLOPT_HTTPHEADER => [],
+                ];
+            }
 
             // D. Minta Snap Token ke Midtrans
             $snapToken = Snap::getSnapToken($params);
