@@ -5,17 +5,20 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\OrderController; // <--- WAJIB DITAMBAHKAN
+use App\Http\Controllers\PaymentCallbackController; // <--- WAJIB DITAMBAHKAN
 use Illuminate\Support\Facades\Route;
 
-// Halaman Utama
+// --- HALAMAN PUBLIK ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/product/{slug}', [HomeController::class, 'show'])->name('product.show');
+
+// Perbaikan: Pilih satu saja (Saya sarankan ProductController)
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('products.show');
-Route::post('/cart/decrease/{id}', [App\Http\Controllers\CartController::class, 'decrease'])->name('cart.decrease');
+
 Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::view('/about', 'about')->name('about');
 
-// Login Google
+// --- AUTHENTICATION ---
 Route::view('/login', 'auth.login')->name('login');
 Route::post('/logout', function () {
     auth()->logout();
@@ -27,20 +30,29 @@ Route::post('/logout', function () {
 Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
-// FITUR KERANJANG (Harus Login)
+// --- FITUR MEMBER (HARUS LOGIN) ---
 Route::middleware(['auth'])->group(function () {
+    // Cart
     Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
-    Route::get('/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-    Route::post('/checkout/process', [App\Http\Controllers\CartController::class, 'checkout'])->name('checkout.process');
-    Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
-    // Route untuk menerima laporan dari Midtrans
-    Route::post('payments/midtrans-notification', [App\Http\Controllers\PaymentCallbackController::class, 'receive']);
+    Route::post('/cart/decrease/{id}', [CartController::class, 'decrease'])->name('cart.decrease'); // Dipindah ke dalam auth
+    
+    // Checkout (Proses Pembayaran)
+    Route::post('/checkout/process', [CartController::class, 'checkout'])->name('checkout.process');
+
+    // Orders (PERBAIKAN DISINI)
+    // 1. Ganti 'my-orders' jadi 'orders' biar sesuai error log 404 tadi
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    // 2. Tambahkan route detail order (ini yang bikin not found saat klik detail)
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 });
 
-// Admin Redirect
+// --- ADMIN REDIRECT ---
 Route::get('/login-admin', function () {
     return redirect('/admin/login');
 });
 
+// --- WEBHOOK MIDTRANS (WAJIB DILUAR AUTH) ---
+// Midtrans tidak perlu login, jadi taruh di luar middleware auth
+Route::post('payments/midtrans-notification', [PaymentCallbackController::class, 'receive']);
