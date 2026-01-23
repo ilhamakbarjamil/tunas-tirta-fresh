@@ -3,76 +3,122 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Product;        // <--- Wajib Import ini
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // <--- Wajib Import ini (Buat Transaksi)
-use Xendit\Configuration;
-use Xendit\Invoice\InvoiceApi;
+use Illuminate\Support\Facades\Http;
+// 1. GANTI IMPORTS
+use Midtrans\Config;
+use Midtrans\Transaction;
 
 class OrderController extends Controller
 {
+    public function __construct()
+    {
+        // 2. SETUP CONFIG MIDTRANS (Bisa ditaruh di __construct biar rapi)
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+    }
+
     public function index()
     {
-        // 1. Ambil Order User
+        // Ambil Order User
         $orders = Order::where('user_id', Auth::id())
-                        ->with(['items.product', 'items.variant'])
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        // 2. Cek Status Pembayaran ke Xendit
-        Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
-        $apiInstance = new InvoiceApi();
-
+        // 3. LOGIKA CEK STATUS OTOMATIS (VERSI MIDTRANS)
         foreach ($orders as $order) {
-            // Hanya cek yang pending & punya external_id (Order Xendit)
-            if ($order->status === 'pending' && !empty($order->external_id)) {
-                
+            // Cek hanya yang statusnya masih 'pending'
+            // Pastikan order punya ID (karena Midtrans butuh Order ID)
+            if ($order->status == 'pending' && $order->id) {
                 try {
-                    // Cari Invoice di Xendit berdasarkan ID Order kita
-                    $list_invoices = $apiInstance->getInvoices(null, $order->external_id);
+                    // Minta status ke Midtrans berdasarkan Order ID (atau external_id kalau Mas pakai itu)
+                    // Asumsi: Di Midtrans Mas pakai $order->id sebagai Order ID
+                    $status = Transaction::status($order->id);
 
-                    if (count($list_invoices) > 0) {
-                        $invoice = $list_invoices[0];
+                    // Cek Status Transaksi dari respon Midtrans
+                    $transactionStatus = $status->transaction_status;
+                    $fraudStatus = $status->fraud_status;
 
-                        // --- LOGIKA UTAMA DI SINI ---
-                        if ($invoice['status'] === 'PAID' || $invoice['status'] === 'SETTLED') {
-                            
-                            // Mulai Transaksi Database (Biar Aman)
-                            DB::transaction(function () use ($order) {
-                                // A. Update Status jadi 'processed'
-                                $order->update(['status' => 'processed']);
+                    $isPaid = false;
 
-                                // B. Kurangi Stok Barang
-                                foreach ($order->items as $item) {
-                                    $product = Product::find($item->product_id);
-                                    
-                                    // Cek apakah produknya ada?
-                                    if ($product) {
-                                        // Kurangi stok sesuai jumlah beli
-                                        // Pastikan di tabel products ada kolom 'stock'
-                                        if ($product->stock >= $item->quantity) {
-                                            $product->decrement('stock', $item->quantity);
-                                        } else {
-                                            // Opsional: Kalau stok minus, set jadi 0
-                                            $product->update(['stock' => 0]);
-                                        }
-                                    }
-                                }
-                            });
-
-                        } elseif ($invoice['status'] === 'EXPIRED') {
-                            $order->update(['status' => 'cancelled']);
+                    // Logika Status Midtrans
+                    if ($transactionStatus == 'capture') {
+                        if ($fraudStatus == 'challenge') {
+                            // Masih ditahan (Challenge)
+                        } else {
+                            $isPaid = true; // Sukses CC
                         }
+                    } else if ($transactionStatus == 'settlement') {
+                        $isPaid = true; // Sukses Transfer/E-wallet
+                    } else if ($transactionStatus == 'cancel' || $transactionStatus == 'deny' || $transactionStatus == 'expire') {
+                        // Jika expired/gagal di Midtrans, update di DB kita juga
+                        $order->update(['status' => 'failed']);
+                    }
+
+                    // JIKA LUNAS
+                    if ($isPaid) {
+                        // Update Status Database
+                        $order->update(['status' => 'paid']);
+
+                        // --- KIRIM WHATSAPP KE ADMIN ---
+                        // Note: Invoice URL di Midtrans (Snap) biasanya tidak disimpan permanen seperti Xendit.
+                        // Jadi kita kosongkan atau ganti link ke detail web kita.
+                        $invoiceUrl = route('orders.show', $order->id); 
+                        $this->sendWhatsAppNotification($order, $invoiceUrl);
                     }
 
                 } catch (\Exception $e) {
-                    // Diamkan error koneksi, lanjut ke order berikutnya
-                    continue;
+                    // Jika error (misal Order ID belum ada di Midtrans karena user baru klik checkout tapi belum bayar)
+                    // Lanjut ke order berikutnya (jangan error 500)
+                    continue; 
                 }
             }
         }
 
         return view('orders.index', compact('orders'));
+    }
+
+    public function show(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        return view('orders.show', compact('order'));
+    }
+
+    // --- FUNGSI KIRIM WA (Hampir sama, cuma edit pesan dikit) ---
+    private function sendWhatsAppNotification($order, $invoiceUrl)
+    {
+        $adminPhone = env('WHATSAPP_ADMIN');
+        $token = env('FONNTE_TOKEN');
+
+        // Susun Pesan
+        $message = "*LAPORAN ORDER LUNAS!* ✅\n\n";
+        $message .= "No Order: #" . $order->id . "\n"; // Midtrans biasa pakai ID angka
+        $message .= "Pembeli: " . Auth::user()->name . "\n";
+        $message .= "Total Barang: Rp " . number_format($order->total_price, 0, ',', '.') . "\n";
+        $message .= "Status: SUDAH DIBAYAR (via Midtrans)\n\n";
+        
+        $message .= "*Alamat Pengiriman:* \n" . $order->address . "\n\n";
+        
+        $message .= "🔗 *Link Detail:* \n" . $invoiceUrl . "\n\n";
+        
+        $message .= "⚠️ *PENTING:* \n";
+        $message .= "Cek Dashboard Midtrans untuk verifikasi dana masuk.";
+
+        // Kirim via Fonnte
+        try {
+            Http::withHeaders([
+                'Authorization' => $token,
+            ])->post('https://api.fonnte.com/send', [
+                'target' => $adminPhone,
+                'message' => $message,
+            ]);
+        } catch (\Exception $e) {
+            // Log::error($e->getMessage());
+        }
     }
 }

@@ -3,17 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Xendit\Configuration;
-use Xendit\Invoice\InvoiceApi;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB; // Tambah DB Transaction biar aman
+// 1. GANTI LIBRARY XENDIT JADI MIDTRANS
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class CartController extends Controller
 {
+    // --- KONFIGURASI MIDTRANS DI CONSTRUCTOR ---
+    public function __construct()
+    {
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+    }
+
     public function index()
     {
-        $carts = Auth::user()->carts()->with(['product', 'variant'])->get();
+        $carts = Cart::where('user_id', Auth::id())->with(['product', 'variant'])->get();
         return view('cart.index', compact('carts'));
     }
 
@@ -24,18 +37,17 @@ class CartController extends Controller
         }
 
         $user = Auth::user();
-        $variantId = $request->input('variant_id'); 
+        $variantId = $request->input('variant_id');
 
-        // ... (LOGIKA CEK CART LAMA TETAP SAMA, TIDAK BERUBAH) ...
-        $existingCart = \App\Models\Cart::where('user_id', $user->id)
-                            ->where('product_id', $productId)
-                            ->where('product_variant_id', $variantId)
-                            ->first();
+        $existingCart = Cart::where('user_id', $user->id)
+            ->where('product_id', $productId)
+            ->where('product_variant_id', $variantId)
+            ->first();
 
         if ($existingCart) {
             $existingCart->increment('quantity', $request->input('quantity', 1));
         } else {
-            \App\Models\Cart::create([
+            Cart::create([
                 'user_id' => $user->id,
                 'product_id' => $productId,
                 'product_variant_id' => $variantId,
@@ -43,138 +55,125 @@ class CartController extends Controller
             ]);
         }
 
-        // --- UPDATE DI SINI ---
-        // Kita kirim sinyal 'show_cart' => true agar Sidebar otomatis terbuka
         return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $cart = Cart::where('user_id', Auth::id())->where('id', $id)->first();
+        if ($cart) {
+            $qty = max(1, $request->input('quantity'));
+            $cart->update(['quantity' => $qty]);
+        }
+        return redirect()->back();
     }
 
     public function destroy($id)
     {
-        Cart::find($id)->delete();
-        return redirect()->back()->with('success', 'Produk dihapus.');
+        $cart = Cart::where('user_id', Auth::id())->where('id', $id)->first();
+        if ($cart) {
+            $cart->delete();
+        }
+        return redirect()->back()->with('success', 'Produk dihapus dari keranjang');
     }
 
-    // --- FITUR UTAMA: CHECKOUT XENDIT ---
-    // PERBAIKAN: Tambahkan (Request $request) di dalam kurung
+    // --- 2. FUNGSI CHECKOUT (UBAHAN TOTAL MIDTRANS) ---
     public function checkout(Request $request)
     {
-        // 1. Validasi Input (Wajib isi Alamat)
+        // Validasi
         $request->validate([
             'address' => 'required|string|max:500',
             'note' => 'nullable|string|max:200',
-        ], [
-            'address.required' => 'Mohon isi alamat pengiriman dulu ya kak!',
         ]);
 
         $user = Auth::user();
-        $carts = $user->carts()->with(['product', 'variant'])->get();
+        $carts = Cart::where('user_id', $user->id)->get();
 
         if ($carts->isEmpty()) {
             return redirect()->back()->with('error', 'Keranjang kosong!');
         }
 
-        // 2. Buat ID Unik Xendit
-        $externalId = 'ORDER-' . time() . '-' . Str::random(5); 
-        
-        // 3. Simpan Order ke Database (Plus Alamat & Catatan)
-        $order = \App\Models\Order::create([
-            'user_id' => $user->id,
-            'status' => 'pending',
-            'total_price' => 0, 
-            'external_id' => $externalId,
-            'address' => $request->address, // <--- Ambil dari form
-            'note' => $request->note,       // <--- Ambil dari form
-        ]);
-
+        // Hitung Total
         $totalOrder = 0;
-        $itemsForXendit = []; 
-
-        // 4. Pindahkan Keranjang ke Order Items
         foreach ($carts as $cart) {
-            if ($cart->variant) {
-                $price = $cart->variant->price;
-                $productName = $cart->product->name . " (" . $cart->variant->name . ")";
-                $variantId = $cart->variant->id;
-            } else {
-                $price = $cart->product->price;
-                $productName = $cart->product->name;
-                $variantId = null;
-            }
+            $price = $cart->variant ? $cart->variant->price : $cart->product->price;
+            $totalOrder += $price * $cart->quantity;
+        }
 
-            $subtotal = $price * $cart->quantity;
-            $totalOrder += $subtotal;
-
-            \App\Models\OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $cart->product_id,
-                'product_variant_id' => $variantId,
-                'quantity' => $cart->quantity,
-                'price' => $price,
+        // --- MULAI TRANSAKSI DATABASE ---
+        DB::beginTransaction();
+        try {
+            // A. Buat Order Dulu (Status: Pending)
+            // Kita butuh ID Order untuk dikirim ke Midtrans
+            $order = Order::create([
+                'user_id' => $user->id,
+                'status' => 'pending',
+                'total_price' => $totalOrder,
+                'external_id' => 'ORD-' . time(), // ID Unik
+                'address' => $request->address,
+                'note' => $request->note,
+                'shipping_courier' => 'Menyesuaikan', // Bisa diupdate nanti
+                // 'snap_token' => null, // Nanti diisi di bawah
             ]);
 
-            $itemsForXendit[] = [
-                'name' => $productName,
-                'quantity' => $cart->quantity,
-                'price' => $price,
-                'category' => 'Buah Segar',
-            ];
-        }
+            // B. Pindahkan Item ke OrderItem
+            // B. Pindahkan Item ke OrderItem
+            foreach ($carts as $cart) {
+                $price = $cart->variant ? $cart->variant->price : $cart->product->price;
 
-        // Update Total Harga
-        $order->update(['total_price' => $totalOrder]);
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $cart->product_id,
+                    // GANTI DI BAWAH INI:
+                    'product_variant_id' => $cart->product_variant_id, // Sesuaikan dengan nama kolom di tabel carts
+                    'quantity' => $cart->quantity,
+                    'price' => $price,
+                ]);
+            }
 
-        // 5. KIRIM KE XENDIT
-        Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
-        $apiInstance = new InvoiceApi();
-
-        $create_invoice_request = new \Xendit\Invoice\CreateInvoiceRequest([
-            'external_id' => $externalId,
-            'amount' => $totalOrder,
-            'description' => 'Tagihan Order #' . $order->id,
-            'invoice_duration' => 86400, 
-            'customer' => [
-                'given_names' => $user->name,
-                'email' => $user->email,
-                // Kita bisa kirim alamat ke Xendit juga (Opsional)
-                'addresses' => [
+            // C. Siapkan Parameter Midtrans SNAP
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $order->id, // Gunakan ID dari Database
+                    'gross_amount' => (int) $totalOrder, // Wajib Integer
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name,
+                    'email' => $user->email,
+                    // 'phone' => $user->phone, // Tambahkan jika ada
+                ],
+                'item_details' => [
                     [
-                        'city' => 'Indonesia',
-                        'country' => 'ID',
-                        'street_line1' => $request->address
+                        'id' => 'TOTAL',
+                        'price' => (int) $totalOrder,
+                        'quantity' => 1,
+                        'name' => 'Total Pembelian Buah'
                     ]
                 ]
-            ],
-            'success_redirect_url' => route('orders.index'),
-            'failure_redirect_url' => route('home'),
-            'currency' => 'IDR',
-            'items' => $itemsForXendit
-        ]);
+            ];
 
-        try {
-            $result = $apiInstance->createInvoice($create_invoice_request);
-            
-            $order->update(['payment_url' => $result['invoice_url']]);
-            $user->carts()->delete();
+            // D. Minta Snap Token ke Midtrans
+            $snapToken = Snap::getSnapToken($params);
 
-            return redirect($result['invoice_url']);
+            // Simpan Token ke Order (Opsional, tapi bagus buat log)
+            // Pastikan di database tabel orders ada kolom 'snap_token' atau 'payment_url'
+            // Kalau tidak ada kolom snap_token, pakai kolom payment_url saja sementara
+            $order->payment_url = $snapToken;
+            $order->snap_token = $snapToken;
+            $order->save();
+
+            // E. Hapus Keranjang
+            Cart::where('user_id', $user->id)->delete();
+
+            DB::commit();
+
+            // F. LEMPAR KE HALAMAN PEMBAYARAN (VIEW BARU)
+            // Kita bawa variabel $snapToken dan $order ke view
+            return view('checkout.payment', compact('snapToken', 'order'));
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memproses: ' . $e->getMessage());
         }
-    }
-
-    public function decrease($id)
-    {
-        $cart = \App\Models\Cart::find($id);
-        
-        if ($cart) {
-            if ($cart->quantity > 1) {
-                $cart->decrement('quantity'); // Kurangi 1
-            } else {
-                $cart->delete(); // Kalau sisa 1 dikurangi, jadi hapus
-            }
-        }
-        
-        return redirect()->back();
     }
 }
