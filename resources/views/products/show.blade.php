@@ -14,7 +14,6 @@
     </div>
 </div>
 
-<!-- Tambahkan pb-24 agar konten tidak tertutup tombol sticky di mobile -->
 <div class="container mx-auto px-4 py-6 md:py-10 pb-24 lg:pb-10">
     <div class="flex flex-col lg:flex-row gap-8 lg:gap-16">
         
@@ -51,13 +50,14 @@
                 <p class="text-[9px] md:text-[10px] font-bold uppercase tracking-wide text-gray-400">Terjual 150+</p>
             </div>
 
+            <!-- Bagian Harga (Akan diupdate oleh JS) -->
             <div class="mb-6 md:mb-8">
-                <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Harga Terbaik</p>
+                <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Harga Terpilih</p>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-xl md:text-2xl font-black text-primary">
+                    <span id="display-price" class="text-xl md:text-2xl font-black text-primary" data-base-price="{{ $product->price }}">
                         Rp {{ number_format($product->price, 0, ',', '.') }}
                     </span>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">/ pack</span>
+                    <span id="display-unit" class="text-[10px] font-bold text-gray-400 uppercase">/ pack</span>
                 </div>
             </div>
 
@@ -72,25 +72,30 @@
             <form action="{{ route('cart.add', $product->id) }}" method="POST" id="add-to-cart-form" class="mt-auto">
                 @csrf
                 
-                @if($product->variants && $product->variants->count() > 0)
-                    <div class="mb-5">
-                        <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">Pilih Varian</label>
-                        <div class="relative">
-                            <select name="variant_id" class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
+                <div class="mb-5">
+                    <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">Pilih Satuan / Varian</label>
+                    <div class="relative">
+                        <select name="variant_id" id="variant-select" required class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
+                            <!-- Opsi Default (Harga Dasar) -->
+                            <option value="" data-price="{{ $product->price }}" data-unit="pack">
+                                Standar (Rp {{ number_format($product->price, 0, ',', '.') }})
+                            </option>
+                            
+                            @if($product->variants && $product->variants->count() > 0)
                                 @foreach($product->variants as $variant)
-                                    <option value="{{ $variant->id }}">
-                                        {{ $variant->name }} (+ Rp {{ number_format($variant->price - $product->price, 0, ',', '.') }})
+                                    <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}">
+                                        {{ $variant->name }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
                                     </option>
                                 @endforeach
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
-                                <i class="fas fa-chevron-down text-[10px]"></i>
-                            </div>
+                            @endif
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
+                            <i class="fas fa-chevron-down text-[10px]"></i>
                         </div>
                     </div>
-                @endif
+                </div>
 
-                <!-- Tombol Desktop (Hidden on Mobile) -->
+                <!-- Tombol Desktop -->
                 <div class="hidden lg:block space-y-3">
                     @if($product->stock > 0)
                         <button type="submit" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
@@ -104,24 +109,18 @@
                     @endif
                 </div>
 
-                <!-- Tombol Sticky Mobile (Hanya muncul di Mobile) -->
+                <!-- Tombol Sticky Mobile -->
                 @if($product->stock > 0)
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 lg:hidden z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
                         <div class="max-w-xl mx-auto flex items-center gap-4">
                             <div class="flex-shrink-0">
-                                <p class="text-[8px] font-bold uppercase text-gray-400 tracking-widest mb-0.5">Harga</p>
-                                <p class="text-base font-black text-primary leading-none">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                                <p class="text-[8px] font-bold uppercase text-gray-400 tracking-widest mb-0.5">Total</p>
+                                <p id="mobile-display-price" class="text-base font-black text-primary leading-none">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
                             </div>
                             <button type="submit" class="flex-1 bg-dark text-white py-3.5 font-bold uppercase tracking-widest text-[10px] hover:bg-primary active:scale-95 transition-all">
                                 + Keranjang
                             </button>
                         </div>
-                    </div>
-                @else
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 lg:hidden z-50">
-                        <button type="button" disabled class="w-full bg-gray-100 text-gray-400 py-3.5 font-bold uppercase tracking-widest text-[10px] cursor-not-allowed">
-                            Stok Habis
-                        </button>
                     </div>
                 @endif
             </form>
@@ -129,8 +128,36 @@
             <div class="mt-6 flex items-center gap-2 text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest justify-center lg:justify-start">
                 <i class="fas fa-lock"></i> Transaksi Aman & Terenkripsi
             </div>
-
         </div>
     </div>
 </div>
+
+<!-- Script untuk Update Harga secara Real-time -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const variantSelect = document.getElementById('variant-select');
+        const displayPrice = document.getElementById('display-price');
+        const mobileDisplayPrice = document.getElementById('mobile-display-price');
+        const displayUnit = document.getElementById('display-unit');
+
+        variantSelect.addEventListener('change', function() {
+            // Ambil data dari atribut data- di option yang dipilih
+            const selectedOption = this.options[this.selectedIndex];
+            const price = parseInt(selectedOption.getAttribute('data-price'));
+            const unit = selectedOption.getAttribute('data-unit');
+
+            // Format Rupiah
+            const formattedPrice = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(price).replace('Rp', 'Rp ');
+
+            // Update UI
+            displayPrice.innerText = formattedPrice;
+            if(mobileDisplayPrice) mobileDisplayPrice.innerText = formattedPrice;
+            displayUnit.innerText = '/ ' + unit;
+        });
+    });
+</script>
 @endsection
