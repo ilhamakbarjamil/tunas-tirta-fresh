@@ -5,49 +5,74 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http; // Tambahan untuk kirim request API
-use Xendit\Xendit; 
-use Xendit\Invoice;
+use Illuminate\Support\Facades\Http;
+// 1. GANTI IMPORTS
+use Midtrans\Config;
+use Midtrans\Transaction;
 
 class OrderController extends Controller
 {
+    public function __construct()
+    {
+        // 2. SETUP CONFIG MIDTRANS (Bisa ditaruh di __construct biar rapi)
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+    }
+
     public function index()
     {
-        // 1. Setup API Key
-        Xendit::setApiKey(env('XENDIT_SECRET_KEY'));
-
-        // 2. Ambil Order User
+        // Ambil Order User
         $orders = Order::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 3. Cek Status Otomatis
+        // 3. LOGIKA CEK STATUS OTOMATIS (VERSI MIDTRANS)
         foreach ($orders as $order) {
-            // Cek jika status pending atau cancelled (siapa tau user bayar telat)
-            if (($order->status == 'pending' || $order->status == 'cancelled') && $order->external_id) {
+            // Cek hanya yang statusnya masih 'pending'
+            // Pastikan order punya ID (karena Midtrans butuh Order ID)
+            if ($order->status == 'pending' && $order->id) {
                 try {
-                    $listInvoices = Invoice::retrieveAll([
-                        'external_id' => $order->external_id
-                    ]);
+                    // Minta status ke Midtrans berdasarkan Order ID (atau external_id kalau Mas pakai itu)
+                    // Asumsi: Di Midtrans Mas pakai $order->id sebagai Order ID
+                    $status = Transaction::status($order->id);
 
-                    if (!empty($listInvoices) && count($listInvoices) > 0) {
-                        $invoice = $listInvoices[0];
+                    // Cek Status Transaksi dari respon Midtrans
+                    $transactionStatus = $status->transaction_status;
+                    $fraudStatus = $status->fraud_status;
 
-                        if (isset($invoice['status'])) {
-                            // JIKA LUNAS
-                            if ($invoice['status'] == 'PAID' || $invoice['status'] == 'SETTLED') {
-                                
-                                // Update Status Database
-                                $order->update(['status' => 'paid']);
+                    $isPaid = false;
 
-                                // --- KIRIM WHATSAPP KE ADMIN ---
-                                // Kita cek dulu, apakah notifikasi sudah pernah dikirim? (Opsional, biar gak spam)
-                                // Tapi untuk sekarang kita kirim langsung.
-                                $this->sendWhatsAppNotification($order, $invoice['invoice_url']);
-                            } 
+                    // Logika Status Midtrans
+                    if ($transactionStatus == 'capture') {
+                        if ($fraudStatus == 'challenge') {
+                            // Masih ditahan (Challenge)
+                        } else {
+                            $isPaid = true; // Sukses CC
                         }
+                    } else if ($transactionStatus == 'settlement') {
+                        $isPaid = true; // Sukses Transfer/E-wallet
+                    } else if ($transactionStatus == 'cancel' || $transactionStatus == 'deny' || $transactionStatus == 'expire') {
+                        // Jika expired/gagal di Midtrans, update di DB kita juga
+                        $order->update(['status' => 'failed']);
                     }
+
+                    // JIKA LUNAS
+                    if ($isPaid) {
+                        // Update Status Database
+                        $order->update(['status' => 'paid']);
+
+                        // --- KIRIM WHATSAPP KE ADMIN ---
+                        // Note: Invoice URL di Midtrans (Snap) biasanya tidak disimpan permanen seperti Xendit.
+                        // Jadi kita kosongkan atau ganti link ke detail web kita.
+                        $invoiceUrl = route('orders.show', $order->id); 
+                        $this->sendWhatsAppNotification($order, $invoiceUrl);
+                    }
+
                 } catch (\Exception $e) {
+                    // Jika error (misal Order ID belum ada di Midtrans karena user baru klik checkout tapi belum bayar)
+                    // Lanjut ke order berikutnya (jangan error 500)
                     continue; 
                 }
             }
@@ -64,7 +89,7 @@ class OrderController extends Controller
         return view('orders.show', compact('order'));
     }
 
-    // --- FUNGSI TAMBAHAN KIRIM WA ---
+    // --- FUNGSI KIRIM WA (Hampir sama, cuma edit pesan dikit) ---
     private function sendWhatsAppNotification($order, $invoiceUrl)
     {
         $adminPhone = env('WHATSAPP_ADMIN');
@@ -72,17 +97,17 @@ class OrderController extends Controller
 
         // Susun Pesan
         $message = "*LAPORAN ORDER LUNAS!* ✅\n\n";
-        $message .= "No Order: " . $order->external_id . "\n";
+        $message .= "No Order: #" . $order->id . "\n"; // Midtrans biasa pakai ID angka
         $message .= "Pembeli: " . Auth::user()->name . "\n";
         $message .= "Total Barang: Rp " . number_format($order->total_price, 0, ',', '.') . "\n";
-        $message .= "Status: SUDAH DIBAYAR (via Xendit)\n\n";
+        $message .= "Status: SUDAH DIBAYAR (via Midtrans)\n\n";
         
         $message .= "*Alamat Pengiriman:* \n" . $order->address . "\n\n";
         
-        $message .= "🔗 *Link Invoice:* \n" . $invoiceUrl . "\n\n";
+        $message .= "🔗 *Link Detail:* \n" . $invoiceUrl . "\n\n";
         
         $message .= "⚠️ *PENTING:* \n";
-        $message .= "Ongkos kirim belum termasuk. Mohon Admin segera cek alamat dan hubungi pembeli untuk info biaya ongkir.";
+        $message .= "Cek Dashboard Midtrans untuk verifikasi dana masuk.";
 
         // Kirim via Fonnte
         try {
@@ -93,7 +118,6 @@ class OrderController extends Controller
                 'message' => $message,
             ]);
         } catch (\Exception $e) {
-            // Jika gagal kirim WA, biarkan saja (jangan bikin error di web)
             // Log::error($e->getMessage());
         }
     }

@@ -35,6 +35,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
     Route::post('/checkout/process', [App\Http\Controllers\CartController::class, 'checkout'])->name('checkout.process');
     Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
+    // Route untuk menerima laporan dari Midtrans
+    Route::post('payments/midtrans-notification', [App\Http\Controllers\PaymentCallbackController::class, 'receive']);
 });
 
 // Admin Redirect
