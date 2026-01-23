@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http; // WAJIB ADA: Untuk kirim request ke Fonnte
+use Illuminate\Support\Facades\Http;
 use Midtrans\Config;
 use Midtrans\Notification;
 
@@ -12,7 +14,7 @@ class PaymentCallbackController extends Controller
 {
     public function receive(Request $request)
     {
-        // 1. Konfigurasi
+        // 1. Konfigurasi Midtrans
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
         Config::$isSanitized = true;
@@ -28,55 +30,73 @@ class PaymentCallbackController extends Controller
         $orderId = $notif->order_id;
         $fraud = $notif->fraud_status;
 
-        // Cari Order beserta data User-nya (Penting buat ambil Nama/NoHP)
-        $order = Order::with('user')->find($orderId);
+        // Ambil data Order beserta Item dan User-nya
+        $order = Order::with(['user', 'items'])->find($orderId);
 
         if (!$order) {
             return response(['message' => 'Order not found'], 404);
         }
 
+        // Jangan proses jika order sudah berstatus 'paid' (mencegah stok berkurang 2x)
+        if ($order->status === 'paid') {
+            return response(['message' => 'Order already processed']);
+        }
+
         $isPaid = false;
 
-        // 2. Cek Status Midtrans
+        // 2. Cek Status Transaksi Midtrans
         if ($transaction == 'capture') {
             if ($fraud == 'challenge') {
                 $order->update(['status' => 'pending']);
             } else {
-                $isPaid = true; // Kartu Kredit Lunas
+                $isPaid = true; 
             }
         } else if ($transaction == 'settlement') {
-            $isPaid = true; // Transfer/GoPay Lunas
+            $isPaid = true; 
         } else if ($transaction == 'pending') {
             $order->update(['status' => 'pending']);
         } else if ($transaction == 'deny' || $transaction == 'expire' || $transaction == 'cancel') {
             $order->update(['status' => 'failed']);
         }
 
-        // 3. JIKA LUNAS -> Update DB & KIRIM WA
+        // 3. JIKA PEMBAYARAN LUNAS
         if ($isPaid) {
+            // A. Update status order jadi paid
             $order->update(['status' => 'paid']);
+
+            // B. LOGIKA PENGURANGAN STOK
+            foreach ($order->items as $item) {
+                if ($item->product_variant_id) {
+                    // Kurangi stok di tabel Varian
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant) {
+                        $variant->decrement('stock', $item->quantity);
+                    }
+                } else {
+                    // Kurangi stok di tabel Produk Utama
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $product->decrement('stock', $item->quantity);
+                    }
+                }
+            }
             
-            // Panggil Fungsi Kirim WA
+            // C. Kirim Notifikasi WhatsApp
             $this->sendWhatsAppNotification($order);
         }
 
-        return response(['message' => 'Payment status updated']);
+        return response(['message' => 'Payment status updated & stock reduced']);
     }
 
-    // --- FUNGSI KIRIM WA (Versi Midtrans) ---
+    // --- FUNGSI KIRIM WA ---
     private function sendWhatsAppNotification($order)
     {
-        $adminPhone = env('WHATSAPP_ADMIN'); // Pastikan ini ada di .env
-        $token = env('FONNTE_TOKEN');        // Pastikan ini ada di .env
+        $adminPhone = env('WHATSAPP_ADMIN'); 
+        $token = env('FONNTE_TOKEN');        
 
-        // Validasi data user (karena webhook berjalan di background)
         $buyerName = $order->user ? $order->user->name : 'Guest';
-        
-        // Buat Link Detail Order (bukan link payment lagi, karena sudah lunas)
-        // Pastikan Mas punya route 'orders.show'. Kalau error, ganti jadi URL biasa.
         $detailUrl = url('/orders'); 
 
-        // Susun Pesan
         $message = "*LAPORAN ORDER LUNAS!* ✅\n\n";
         $message .= "No Order: #" . $order->id . "\n";
         $message .= "Pembeli: " . $buyerName . "\n";
@@ -89,7 +109,6 @@ class PaymentCallbackController extends Controller
         $message .= "🔗 *Lihat Detail:* \n" . $detailUrl . "\n\n";
         $message .= "Mohon Admin segera proses pengiriman.";
 
-        // Kirim via Fonnte
         try {
             Http::withHeaders([
                 'Authorization' => $token,
@@ -98,8 +117,7 @@ class PaymentCallbackController extends Controller
                 'message' => $message,
             ]);
         } catch (\Exception $e) {
-            // Biarkan saja jika gagal kirim WA, yang penting status order sudah berubah
-            // Log::error("Gagal kirim WA: " . $e->getMessage());
+            // Gagal kirim WA tidak membatalkan proses lunas
         }
     }
 }

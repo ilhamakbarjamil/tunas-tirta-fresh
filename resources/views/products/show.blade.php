@@ -68,62 +68,55 @@
                 </p>
             </div>
 
-            <!-- Form Start -->
-            <form action="{{ route('cart.add', $product->id) }}" method="POST" id="add-to-cart-form" class="mt-auto">
-                @csrf
+            <!-- Bagian Form di dalam product.blade.php -->
+<form action="{{ route('cart.add', $product->id) }}" method="POST" id="add-to-cart-form" class="mt-auto">
+    @csrf
+    
+    <div class="mb-5">
+        <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">
+            Pilih Satuan / Varian <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+            <select name="variant_id" id="variant-select" required class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
                 
-                <div class="mb-5">
-                    <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">Pilih Satuan / Varian</label>
-                    <div class="relative">
-                        <select name="variant_id" id="variant-select" required class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
-                            <!-- Opsi Default (Harga Dasar) -->
-                            <option value="" data-price="{{ $product->price }}" data-unit="pack">
-                                Standar (Rp {{ number_format($product->price, 0, ',', '.') }})
-                            </option>
-                            
-                            @if($product->variants && $product->variants->count() > 0)
-                                @foreach($product->variants as $variant)
-                                    <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}">
-                                        {{ $variant->name }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
-                            <i class="fas fa-chevron-down text-[10px]"></i>
-                        </div>
-                    </div>
-                </div>
+                <!-- 1. Placeholder (Value kosong agar 'required' bekerja) -->
+                <option value="" disabled selected>--- PILIH VARIAN ---</option>
 
-                <!-- Tombol Desktop -->
-                <div class="hidden lg:block space-y-3">
-                    @if($product->stock > 0)
-                        <button type="submit" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
-                            <span>Masukkan Keranjang</span>
-                            <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
-                        </button>
-                    @else
-                         <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
-                            Stok Habis
-                        </button>
-                    @endif
-                </div>
-
-                <!-- Tombol Sticky Mobile -->
-                @if($product->stock > 0)
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 lg:hidden z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
-                        <div class="max-w-xl mx-auto flex items-center gap-4">
-                            <div class="flex-shrink-0">
-                                <p class="text-[8px] font-bold uppercase text-gray-400 tracking-widest mb-0.5">Total</p>
-                                <p id="mobile-display-price" class="text-base font-black text-primary leading-none">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                            </div>
-                            <button type="submit" class="flex-1 bg-dark text-white py-3.5 font-bold uppercase tracking-widest text-[10px] hover:bg-primary active:scale-95 transition-all">
-                                + Keranjang
-                            </button>
-                        </div>
-                    </div>
+                <!-- 2. Pilihan Standar (Sekarang diberi value "normal" agar valid) -->
+                <option value="normal" data-price="{{ $product->price }}" data-unit="pack">
+                    STANDAR (Rp {{ number_format($product->price, 0, ',', '.') }})
+                </option>
+                
+                <!-- 3. Pilihan Varian Lainnya -->
+                @if($product->variants && $product->variants->count() > 0)
+                    @foreach($product->variants as $variant)
+                        <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}">
+                            {{ strtoupper($variant->name) }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
+                        </option>
+                    @endforeach
                 @endif
-            </form>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
+                <i class="fas fa-chevron-down text-[10px]"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tombol Submit (Hanya aktif jika sudah pilih) -->
+    <div class="hidden lg:block space-y-3">
+        @if($product->stock > 0)
+            <button type="submit" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
+                <span>Masukkan Keranjang</span>
+                <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
+            </button>
+        @else
+            <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
+                Stok Habis
+            </button>
+        @endif
+    </div>
+    <!-- ... bagian sticky mobile juga menyesuaikan ... -->
+</form>
             
             <div class="mt-6 flex items-center gap-2 text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest justify-center lg:justify-start">
                 <i class="fas fa-lock"></i> Transaksi Aman & Terenkripsi
