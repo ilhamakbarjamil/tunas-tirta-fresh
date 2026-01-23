@@ -106,23 +106,36 @@ class WebhookController extends Controller
     }
 
     // ==========================================
-    // FUNGSI BANTUAN: KURANGI STOK
+    // FUNGSI BANTUAN: KURANGI STOK - HANYA DARI VARIAN
     // ==========================================
     private function reduceStock($order)
     {
         foreach ($order->items as $item) {
-            if ($item->product_variant_id) {
-                // Kurangi stok di tabel Varian
-                $variant = ProductVariant::find($item->product_variant_id);
-                if ($variant && $variant->stock >= $item->quantity) {
-                    $variant->decrement('stock', $item->quantity);
-                }
+            if (!$item->product_variant_id) {
+                Log::warning('OrderItem without variant found in webhook', [
+                    'order_item_id' => $item->id,
+                    'product_id' => $item->product_id
+                ]);
+                continue; // Skip jika tidak ada varian
+            }
+            
+            // Kurangi stok di tabel Varian
+            $variant = ProductVariant::find($item->product_variant_id);
+            if ($variant && $variant->stock >= $item->quantity) {
+                $variant->decrement('stock', $item->quantity);
+                Log::info('Stock reduced via webhook (Variant)', [
+                    'variant_id' => $variant->id,
+                    'variant_name' => $variant->name,
+                    'quantity' => $item->quantity,
+                    'new_stock' => $variant->fresh()->stock
+                ]);
             } else {
-                // Kurangi stok di tabel Produk Utama
-                $product = Product::find($item->product_id);
-                if ($product && $product->stock >= $item->quantity) {
-                    $product->decrement('stock', $item->quantity);
-                }
+                Log::warning('Stock reduction failed in webhook', [
+                    'variant_id' => $item->product_variant_id,
+                    'variant_exists' => $variant ? true : false,
+                    'stock_available' => $variant ? $variant->stock : 0,
+                    'quantity_needed' => $item->quantity
+                ]);
             }
         }
     }

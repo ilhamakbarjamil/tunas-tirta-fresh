@@ -21,14 +21,8 @@
         <div class="w-full lg:w-7/12">
             <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 sm:p-10 flex justify-center items-center relative overflow-hidden group min-h-[300px] md:min-h-[450px]">
                 <!-- Stock Badge (Dinamis berdasarkan variant yang dipilih) -->
-                <div id="stock-badge" class="absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
-                    @if($product->stock <= 5 && $product->stock > 0)
-                        Stok Menipis
-                    @elseif($product->stock > 5)
-                        Ready Stock
-                    @else
-                        Stok Habis
-                    @endif
+                <div id="stock-badge" class="absolute top-4 left-4 bg-gray-500 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
+                    Pilih Varian
                 </div>
 
                 <img src="{{ asset('storage/' . $product->image) }}" 
@@ -82,19 +76,17 @@
                 
                 <!-- 1. Placeholder (Value kosong agar 'required' bekerja) -->
                 <option value="" disabled selected>--- PILIH VARIAN ---</option>
-
-                <!-- 2. Pilihan Standar (Sekarang diberi value "normal" agar valid) -->
-                <option value="normal" data-price="{{ $product->price }}" data-unit="pack" data-stock="{{ $product->stock }}">
-                    STANDAR (Rp {{ number_format($product->price, 0, ',', '.') }})
-                </option>
                 
-                <!-- 3. Pilihan Varian Lainnya -->
+                <!-- 2. Pilihan Varian (WAJIB PILIH VARIAN) -->
                 @if($product->variants && $product->variants->count() > 0)
                     @foreach($product->variants as $variant)
                         <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}" data-stock="{{ $variant->stock }}">
                             {{ strtoupper($variant->name) }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
                         </option>
                     @endforeach
+                @else
+                    <!-- Jika tidak ada varian, tampilkan pesan -->
+                    <option value="" disabled>Tidak ada varian tersedia</option>
                 @endif
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
@@ -105,13 +97,19 @@
 
     <!-- Tombol Submit (Dinamis berdasarkan stock variant yang dipilih) -->
     <div class="hidden lg:block space-y-3">
-        <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
-            <span>Masukkan Keranjang</span>
-            <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
-        </button>
-        <button type="button" id="out-of-stock-btn" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed hidden">
-            Stok Habis
-        </button>
+        @if($product->variants && $product->variants->count() > 0)
+            <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
+                <span>Masukkan Keranjang</span>
+                <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
+            </button>
+            <button type="button" id="out-of-stock-btn" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed hidden">
+                Stok Habis
+            </button>
+        @else
+            <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
+                Tidak Tersedia (Belum Ada Varian)
+            </button>
+        @endif
     </div>
     <!-- ... bagian sticky mobile juga menyesuaikan ... -->
 </form>

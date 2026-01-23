@@ -59,12 +59,10 @@
                                 @if($product->variants->isNotEmpty())
                                     <div class="relative">
                                         <select name="variant_id" onchange="updatePrice(this, {{ $product->id }})"
-                                            class="w-full bg-gray-50 border-none text-dark text-[10px] font-bold uppercase tracking-tighter px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-dark cursor-pointer rounded-none appearance-none">
+                                            class="w-full bg-gray-50 border-none text-dark text-[10px] font-bold uppercase tracking-tighter px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-dark cursor-pointer rounded-none appearance-none" required>
 
-                                            <!-- PERBAIKAN DI SINI: Value diganti 'normal' agar valid di Controller -->
-                                            <option value="normal" data-price="{{ $product->price }}">
-                                                STANDAR (PACK)
-                                            </option>
+                                            <!-- WAJIB PILIH VARIAN (Tidak ada lagi opsi STANDAR) -->
+                                            <option value="" disabled selected>Pilih Varian</option>
 
                                             @foreach($product->variants as $variant)
                                                 <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
@@ -79,10 +77,9 @@
                                         </div>
                                     </div>
                                 @else
-                                    <!-- Jika tidak ada varian, kirim value 'normal' secara tersembunyi -->
-                                    <input type="hidden" name="variant_id" value="normal">
-                                    <div class="text-[9px] font-bold text-gray-300 uppercase tracking-widest py-2">
-                                        Standard Pack
+                                    <!-- Jika tidak ada varian, tampilkan pesan -->
+                                    <div class="text-[9px] font-bold text-gray-300 uppercase tracking-widest py-2 text-center">
+                                        Tidak Tersedia
                                     </div>
                                 @endif
                             </div>
@@ -91,7 +88,7 @@
                                 <input type="number" name="quantity" value="1" min="1"
                                     class="w-12 bg-gray-50 border-none text-center text-xs font-black text-dark py-2.5 focus:outline-none focus:ring-1 focus:ring-dark rounded-none">
 
-                                @if($product->stock > 0)
+                                @if($product->variants->isNotEmpty())
                                     <button type="submit"
                                         class="flex-1 bg-dark hover:bg-primary text-white font-black py-2.5 transition-colors duration-300 flex items-center justify-center gap-2 rounded-none">
                                         <span class="text-[10px] uppercase tracking-widest">Tambah</span>
@@ -100,7 +97,7 @@
                                 @else
                                     <button type="button" disabled
                                         class="flex-1 bg-gray-100 text-gray-300 font-black py-2.5 text-[10px] uppercase tracking-widest rounded-none cursor-not-allowed">
-                                        Habis
+                                        Tidak Tersedia
                                     </button>
                                 @endif
                             </div>

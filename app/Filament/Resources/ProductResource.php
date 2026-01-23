@@ -71,21 +71,23 @@ class ProductResource extends Resource
                             ->preload()
                             ->required(),
 
-                        // Harga & Stok (Berdampingan)
+                        // Harga (Stok produk utama tidak digunakan lagi, hanya stok varian)
                         Forms\Components\TextInput::make('price')
-                            ->label('Harga Satuan')
+                            ->label('Harga Default (Referensi)')
+                            ->helperText('Harga ini hanya sebagai referensi. Harga sebenarnya ditentukan di varian.')
                             ->required()
                             ->numeric()
                             ->prefix('Rp'),
                         
-                        Forms\Components\TextInput::make('stock')
-                            ->label('Stok Awal')
-                            ->required()
-                            ->numeric()
-                            ->default(999),
+                        // Stock produk utama dihapus karena sekarang hanya menggunakan stock varian
+                        // Forms\Components\TextInput::make('stock')
+                        //     ->label('Stok Awal')
+                        //     ->required()
+                        //     ->numeric()
+                        //     ->default(999),
 
-                        Forms\Components\Section::make('Variasi Produk (Opsional)')
-    ->description('Klik tombol "Tambah Varian" jika produk memiliki pilihan (misal: 1kg, 500gr, Keranjang).')
+                        Forms\Components\Section::make('Variasi Produk (WAJIB)')
+    ->description('Produk HARUS memiliki minimal 1 varian. Stok dikelola per varian.')
     ->schema([
         Forms\Components\Repeater::make('variants')
             ->label('Daftar Varian')
@@ -93,7 +95,7 @@ class ProductResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Varian')
-                    ->placeholder('Contoh: 1 Kg')
+                    ->placeholder('Contoh: 1 Kg, 500gr, Pack, dll')
                     ->required(),
 
                 Forms\Components\TextInput::make('price')
@@ -105,11 +107,14 @@ class ProductResource extends Resource
                 Forms\Components\TextInput::make('stock')
                     ->label('Stok')
                     ->numeric()
-                    ->default(10),
+                    ->default(0)
+                    ->required(),
             ])
             ->columns(3) // Tampilan berjejer 3 kolom
-            ->defaultItems(0) // Default kosong
+            ->minItems(1) // WAJIB minimal 1 varian
+            ->defaultItems(1) // Default 1 varian
             ->addActionLabel('Tambah Varian Baru')
+            ->required()
     ])->columnSpanFull(),
 
                         // Deskripsi
@@ -141,16 +146,17 @@ class ProductResource extends Resource
                     ->label('Kategori')
                     ->sortable(),
 
-                // 4. HARGA (Format Rupiah)
+                // 4. HARGA (Format Rupiah) - Hanya referensi
                 Tables\Columns\TextColumn::make('price')
-                    ->label('Harga')
+                    ->label('Harga Referensi')
                     ->money('IDR')
-                    ->sortable(),
+                    ->sortable()
+                    ->description('Harga sebenarnya di varian'),
 
-                // 5. STOK
-                Tables\Columns\TextColumn::make('stock')
-                    ->label('Stok')
-                    ->numeric()
+                // 5. JUMLAH VARIAN (Stock sekarang di varian)
+                Tables\Columns\TextColumn::make('variants_count')
+                    ->label('Jumlah Varian')
+                    ->counts('variants')
                     ->sortable(),
             ])
             ->filters([
