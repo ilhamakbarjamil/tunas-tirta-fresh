@@ -43,16 +43,7 @@
                 <p class="text-sm font-semibold">Estimasi Selesai</p>
                 <p class="text-xs text-gray-400">30 - 60 Menit</p>
             </div>
-            <div class="glass p-4 rounded-2xl">
-                <i class="fa-solid fa-envelope text-blue-400 mb-2"></i>
-                <p class="text-sm font-semibold">Hubungi Kami</p>
-                <p class="text-xs text-gray-400">support@tokoanda.com</p>
-            </div>
-            <div class="glass p-4 rounded-2xl">
-                <i class="fa-solid fa-share-nodes text-blue-400 mb-2"></i>
-                <p class="text-sm font-semibold">Ikuti Update</p>
-                <p class="text-xs text-gray-400">@tokoanda_id</p>
-            </div>
+            
         </div>
 
         <!-- Footer -->
