@@ -87,7 +87,8 @@ class OrderController extends Controller
         $message .= "Pembeli: " . Auth::user()->name . "\n";
         $message .= "Total: Rp " . number_format($order->total_price, 0, ',', '.') . "\n\n";
         $message .= "Segera proses pesanan ini!\n";
-        $message .= "🔗 Link: $invoiceLink";
+        $message .= "🔗 Link: $invoiceLink\n\n";
+        $message .= "tolong, di infokan untuk biaya ongkir nya";
 
         try {
             // Kirim ke Admin
