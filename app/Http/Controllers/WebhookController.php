@@ -106,36 +106,49 @@ class WebhookController extends Controller
     }
 
     // ==========================================
-    // FUNGSI BANTUAN: KURANGI STOK - HANYA DARI VARIAN
+    // FUNGSI BANTUAN: KURANGI STOK - DARI VARIAN ATAU PRODUK
     // ==========================================
     private function reduceStock($order)
     {
         foreach ($order->items as $item) {
-            if (!$item->product_variant_id) {
-                Log::warning('OrderItem without variant found in webhook', [
-                    'order_item_id' => $item->id,
-                    'product_id' => $item->product_id
-                ]);
-                continue; // Skip jika tidak ada varian
-            }
-            
-            // Kurangi stok di tabel Varian
-            $variant = ProductVariant::find($item->product_variant_id);
-            if ($variant && $variant->stock >= $item->quantity) {
-                $variant->decrement('stock', $item->quantity);
-                Log::info('Stock reduced via webhook (Variant)', [
-                    'variant_id' => $variant->id,
-                    'variant_name' => $variant->name,
-                    'quantity' => $item->quantity,
-                    'new_stock' => $variant->fresh()->stock
-                ]);
+            if ($item->product_variant_id) {
+                // Kurangi stok di tabel Varian
+                $variant = ProductVariant::find($item->product_variant_id);
+                if ($variant && $variant->stock >= $item->quantity) {
+                    $variant->decrement('stock', $item->quantity);
+                    Log::info('Stock reduced via webhook (Variant)', [
+                        'variant_id' => $variant->id,
+                        'variant_name' => $variant->name,
+                        'quantity' => $item->quantity,
+                        'new_stock' => $variant->fresh()->stock
+                    ]);
+                } else {
+                    Log::warning('Stock reduction failed in webhook (Variant)', [
+                        'variant_id' => $item->product_variant_id,
+                        'variant_exists' => $variant ? true : false,
+                        'stock_available' => $variant ? $variant->stock : 0,
+                        'quantity_needed' => $item->quantity
+                    ]);
+                }
             } else {
-                Log::warning('Stock reduction failed in webhook', [
-                    'variant_id' => $item->product_variant_id,
-                    'variant_exists' => $variant ? true : false,
-                    'stock_available' => $variant ? $variant->stock : 0,
-                    'quantity_needed' => $item->quantity
-                ]);
+                // Kurangi stok di tabel Produk (satuan)
+                $product = Product::find($item->product_id);
+                if ($product && $product->stock >= $item->quantity) {
+                    $product->decrement('stock', $item->quantity);
+                    Log::info('Stock reduced via webhook (Product)', [
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'quantity' => $item->quantity,
+                        'new_stock' => $product->fresh()->stock
+                    ]);
+                } else {
+                    Log::warning('Stock reduction failed in webhook (Product)', [
+                        'product_id' => $item->product_id,
+                        'product_exists' => $product ? true : false,
+                        'stock_available' => $product ? $product->stock : 0,
+                        'quantity_needed' => $item->quantity
+                    ]);
+                }
             }
         }
     }

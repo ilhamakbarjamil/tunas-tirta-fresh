@@ -21,7 +21,18 @@
 
                     <!-- Image Area -->
                     <div class="aspect-square bg-gray-50 p-4 relative overflow-hidden">
-                        @if($product->stock <= 0)
+                        @php
+                            // Cek stok: jika ada varian, cek stok varian; jika tidak, cek stok produk
+                            $hasStock = false;
+                            if ($product->variants->isNotEmpty()) {
+                                // Cek apakah ada varian dengan stok > 0
+                                $hasStock = $product->variants->where('stock', '>', 0)->isNotEmpty();
+                            } else {
+                                // Cek stok produk (satuan)
+                                $hasStock = $product->stock > 0;
+                            }
+                        @endphp
+                        @if(!$hasStock)
                             <div
                                 class="absolute top-0 left-0 bg-dark text-white text-[8px] font-black px-2 py-1 z-10 uppercase tracking-tighter">
                                 Habis
@@ -61,7 +72,7 @@
                                         <select name="variant_id" onchange="updatePrice(this, {{ $product->id }})"
                                             class="w-full bg-gray-50 border-none text-dark text-[10px] font-bold uppercase tracking-tighter px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-dark cursor-pointer rounded-none appearance-none" required>
 
-                                            <!-- WAJIB PILIH VARIAN (Tidak ada lagi opsi STANDAR) -->
+                                            <!-- WAJIB PILIH VARIAN -->
                                             <option value="" disabled selected>Pilih Varian</option>
 
                                             @foreach($product->variants as $variant)
@@ -77,9 +88,10 @@
                                         </div>
                                     </div>
                                 @else
-                                    <!-- Jika tidak ada varian, tampilkan pesan -->
-                                    <div class="text-[9px] font-bold text-gray-300 uppercase tracking-widest py-2 text-center">
-                                        Tidak Tersedia
+                                    <!-- Produk satuan (tanpa varian) -->
+                                    <input type="hidden" name="variant_id" value="normal">
+                                    <div class="text-[9px] font-bold text-gray-500 uppercase tracking-widest py-2 text-center">
+                                        Satuan
                                     </div>
                                 @endif
                             </div>
@@ -95,10 +107,18 @@
                                         <i class="fas fa-plus text-[8px]"></i>
                                     </button>
                                 @else
-                                    <button type="button" disabled
-                                        class="flex-1 bg-gray-100 text-gray-300 font-black py-2.5 text-[10px] uppercase tracking-widest rounded-none cursor-not-allowed">
-                                        Tidak Tersedia
-                                    </button>
+                                    @if($product->stock > 0)
+                                        <button type="submit"
+                                            class="flex-1 bg-dark hover:bg-primary text-white font-black py-2.5 transition-colors duration-300 flex items-center justify-center gap-2 rounded-none">
+                                            <span class="text-[10px] uppercase tracking-widest">Tambah</span>
+                                            <i class="fas fa-plus text-[8px]"></i>
+                                        </button>
+                                    @else
+                                        <button type="button" disabled
+                                            class="flex-1 bg-gray-100 text-gray-300 font-black py-2.5 text-[10px] uppercase tracking-widest rounded-none cursor-not-allowed">
+                                            Habis
+                                        </button>
+                                    @endif
                                 @endif
                             </div>
                         </form>

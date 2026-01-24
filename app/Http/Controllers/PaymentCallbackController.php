@@ -93,33 +93,46 @@ class PaymentCallbackController extends Controller
             // A. Update status order jadi paid
             $order->update(['status' => 'paid']);
 
-            // B. LOGIKA PENGURANGAN STOK - HANYA DARI VARIAN
+            // B. LOGIKA PENGURANGAN STOK - DARI VARIAN ATAU PRODUK
             foreach ($order->items as $item) {
-                if (!$item->product_variant_id) {
-                    Log::warning('OrderItem without variant found', [
-                        'order_item_id' => $item->id,
-                        'product_id' => $item->product_id
-                    ]);
-                    continue; // Skip jika tidak ada varian
-                }
-                
-                // Kurangi stok di tabel Varian
-                $variant = ProductVariant::find($item->product_variant_id);
-                if ($variant) {
-                    $oldStock = $variant->stock;
-                    $variant->decrement('stock', $item->quantity);
-                    Log::info('Stock reduced (Variant)', [
-                        'variant_id' => $variant->id,
-                        'variant_name' => $variant->name,
-                        'old_stock' => $oldStock,
-                        'quantity' => $item->quantity,
-                        'new_stock' => $variant->fresh()->stock
-                    ]);
+                if ($item->product_variant_id) {
+                    // Kurangi stok di tabel Varian
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant) {
+                        $oldStock = $variant->stock;
+                        $variant->decrement('stock', $item->quantity);
+                        Log::info('Stock reduced (Variant)', [
+                            'variant_id' => $variant->id,
+                            'variant_name' => $variant->name,
+                            'old_stock' => $oldStock,
+                            'quantity' => $item->quantity,
+                            'new_stock' => $variant->fresh()->stock
+                        ]);
+                    } else {
+                        Log::error('Variant not found for stock reduction', [
+                            'variant_id' => $item->product_variant_id,
+                            'order_item_id' => $item->id
+                        ]);
+                    }
                 } else {
-                    Log::error('Variant not found for stock reduction', [
-                        'variant_id' => $item->product_variant_id,
-                        'order_item_id' => $item->id
-                    ]);
+                    // Kurangi stok di tabel Produk (satuan)
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $oldStock = $product->stock;
+                        $product->decrement('stock', $item->quantity);
+                        Log::info('Stock reduced (Product)', [
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'old_stock' => $oldStock,
+                            'quantity' => $item->quantity,
+                            'new_stock' => $product->fresh()->stock
+                        ]);
+                    } else {
+                        Log::error('Product not found for stock reduction', [
+                            'product_id' => $item->product_id,
+                            'order_item_id' => $item->id
+                        ]);
+                    }
                 }
             }
             

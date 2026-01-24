@@ -61,7 +61,7 @@
                                         </div>
                                         <span
                                             class="inline-block mt-1 text-[8px] font-bold uppercase tracking-widest text-gray-400">
-                                            {{ $cart->variant ? $cart->variant->name : 'Standard Pack' }}
+                                            {{ $cart->variant ? $cart->variant->name : 'Satuan' }}
                                         </span>
                                     </div>
 

@@ -41,18 +41,23 @@ class CartController extends Controller
         $variantIdInput = $request->input('variant_id');
         $quantity = $request->input('quantity', 1);
 
-        // VALIDASI: Harus pilih varian (tidak ada lagi opsi "normal")
-        if (empty($variantIdInput) || $variantIdInput === 'normal') {
-            return redirect()->back()->with('error', '❌ Silakan pilih varian/satuan terlebih dahulu.');
-        }
-
-        // AMBIL STOK DARI TABEL VARIAN SAJA
-        $variant = ProductVariant::where('id', $variantIdInput)
-            ->where('product_id', $productId)
-            ->firstOrFail();
+        // Tentukan apakah menggunakan varian atau produk satuan
+        $useVariant = !empty($variantIdInput) && $variantIdInput !== 'normal';
         
-        $maxStock = $variant->stock;
-        $displayName = $product->name . " (" . $variant->name . ")";
+        if ($useVariant) {
+            // AMBIL STOK DARI TABEL VARIAN
+            $variant = ProductVariant::where('id', $variantIdInput)
+                ->where('product_id', $productId)
+                ->firstOrFail();
+            
+            $maxStock = $variant->stock;
+            $displayName = $product->name . " (" . $variant->name . ")";
+        } else {
+            // AMBIL STOK DARI PRODUK (SATUAN)
+            $maxStock = $product->stock;
+            $displayName = $product->name;
+            $variantIdInput = null; // Pastikan null untuk produk satuan
+        }
 
         // VALIDASI STOK
         if ($maxStock <= 0) {
@@ -93,13 +98,16 @@ class CartController extends Controller
         if ($cart) {
             $qty = max(1, $request->input('quantity'));
             
-            // Validasi stock - HANYA DARI VARIAN
-            if (!$cart->product_variant_id) {
-                return redirect()->back()->with('error', "❌ Item ini tidak memiliki varian. Silakan hapus dan tambah ulang.");
+            // Validasi stock - DARI VARIAN ATAU PRODUK
+            if ($cart->product_variant_id) {
+                // Menggunakan stok varian
+                $maxStock = $cart->variant->stock;
+                $displayName = $cart->product->name . " (" . $cart->variant->name . ")";
+            } else {
+                // Menggunakan stok produk (satuan)
+                $maxStock = $cart->product->stock;
+                $displayName = $cart->product->name;
             }
-            
-            $maxStock = $cart->variant->stock;
-            $displayName = $cart->product->name . " (" . $cart->variant->name . ")";
             
             if ($maxStock <= 0) {
                 return redirect()->back()->with('error', "❌ Stok untuk $displayName saat ini habis.");
@@ -155,12 +163,14 @@ class CartController extends Controller
             ->where('user_id', auth()->id())
             ->firstOrFail();
 
-        // Cek stok - HANYA DARI VARIAN
-        if (!$cartItem->product_variant_id) {
-            return redirect()->back()->with('error', '❌ Item ini tidak memiliki varian.');
+        // Cek stok - DARI VARIAN ATAU PRODUK
+        if ($cartItem->product_variant_id) {
+            // Menggunakan stok varian
+            $maxStock = $cartItem->variant->stock;
+        } else {
+            // Menggunakan stok produk (satuan)
+            $maxStock = $cartItem->product->stock;
         }
-        
-        $maxStock = $cartItem->variant->stock;
 
         if ($cartItem->quantity < $maxStock) {
             $cartItem->increment('quantity');
@@ -186,27 +196,35 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Keranjang kosong!');
         }
 
-        // Validasi Stock sebelum checkout - HANYA DARI VARIAN
+        // Validasi Stock sebelum checkout - DARI VARIAN ATAU PRODUK
         foreach ($carts as $cart) {
-            if (!$cart->product_variant_id) {
-                return redirect()->back()->with('error', "❌ Item '{$cart->product->name}' tidak memiliki varian. Silakan hapus dan tambah ulang dengan varian.");
-            }
-            
-            $variant = ProductVariant::find($cart->product_variant_id);
-            if (!$variant || $variant->stock < $cart->quantity) {
-                $displayName = $cart->product->name . " (" . ($variant ? $variant->name : 'Varian') . ")";
-                $availableStock = $variant ? $variant->stock : 0;
-                return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: $availableStock pcs, dibutuhkan: {$cart->quantity} pcs.");
+            if ($cart->product_variant_id) {
+                // Validasi stok varian
+                $variant = ProductVariant::find($cart->product_variant_id);
+                if (!$variant || $variant->stock < $cart->quantity) {
+                    $displayName = $cart->product->name . " (" . ($variant ? $variant->name : 'Varian') . ")";
+                    $availableStock = $variant ? $variant->stock : 0;
+                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: $availableStock pcs, dibutuhkan: {$cart->quantity} pcs.");
+                }
+            } else {
+                // Validasi stok produk (satuan)
+                if ($cart->product->stock < $cart->quantity) {
+                    $displayName = $cart->product->name;
+                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: {$cart->product->stock} pcs, dibutuhkan: {$cart->quantity} pcs.");
+                }
             }
         }
 
-        // Hitung Total - HANYA DARI VARIAN
+        // Hitung Total - DARI VARIAN ATAU PRODUK
         $totalOrder = 0;
         foreach ($carts as $cart) {
-            if (!$cart->variant) {
-                return redirect()->back()->with('error', "❌ Item '{$cart->product->name}' tidak memiliki varian yang valid.");
+            if ($cart->product_variant_id && $cart->variant) {
+                // Menggunakan harga varian
+                $totalOrder += $cart->variant->price * $cart->quantity;
+            } else {
+                // Menggunakan harga produk (satuan)
+                $totalOrder += $cart->product->price * $cart->quantity;
             }
-            $totalOrder += $cart->variant->price * $cart->quantity;
         }
 
         // --- MULAI TRANSAKSI DATABASE ---
@@ -225,19 +243,20 @@ class CartController extends Controller
                 // 'snap_token' => null, // Nanti diisi di bawah
             ]);
 
-            // B. Pindahkan Item ke OrderItem - HANYA DARI VARIAN
+            // B. Pindahkan Item ke OrderItem - DARI VARIAN ATAU PRODUK
             foreach ($carts as $cart) {
-                if (!$cart->variant) {
-                    DB::rollBack();
-                    return redirect()->back()->with('error', "❌ Item '{$cart->product->name}' tidak memiliki varian yang valid.");
+                if ($cart->product_variant_id && $cart->variant) {
+                    // Menggunakan harga varian
+                    $price = $cart->variant->price;
+                } else {
+                    // Menggunakan harga produk (satuan)
+                    $price = $cart->product->price;
                 }
-                
-                $price = $cart->variant->price;
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $cart->product_id,
-                    'product_variant_id' => $cart->product_variant_id,
+                    'product_variant_id' => $cart->product_variant_id, // Bisa null untuk produk satuan
                     'quantity' => $cart->quantity,
                     'price' => $price,
                 ]);

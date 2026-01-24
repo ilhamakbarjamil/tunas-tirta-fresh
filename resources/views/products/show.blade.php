@@ -20,9 +20,19 @@
         <!-- Kolom Gambar -->
         <div class="w-full lg:w-7/12">
             <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 sm:p-10 flex justify-center items-center relative overflow-hidden group min-h-[300px] md:min-h-[450px]">
-                <!-- Stock Badge (Dinamis berdasarkan variant yang dipilih) -->
+                <!-- Stock Badge (Dinamis berdasarkan variant yang dipilih atau produk satuan) -->
                 <div id="stock-badge" class="absolute top-4 left-4 bg-gray-500 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
-                    Pilih Varian
+                    @if($product->variants && $product->variants->count() > 0)
+                        Pilih Varian
+                    @else
+                        @if($product->stock <= 0)
+                            Stok Habis
+                        @elseif($product->stock <= 5)
+                            Stok Menipis
+                        @else
+                            Ready Stock
+                        @endif
+                    @endif
                 </div>
 
                 <img src="{{ asset('storage/' . $product->image) }}" 
@@ -67,35 +77,32 @@
 <form action="{{ route('cart.add', $product->id) }}" method="POST" id="add-to-cart-form" class="mt-auto">
     @csrf
     
-    <div class="mb-5">
-        <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">
-            Pilih Satuan / Varian <span class="text-red-500">*</span>
-        </label>
-        <div class="relative">
-            <select name="variant_id" id="variant-select" required class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
-                
-                <!-- 1. Placeholder (Value kosong agar 'required' bekerja) -->
-                <option value="" disabled selected>--- PILIH VARIAN ---</option>
-                
-                <!-- 2. Pilihan Varian (WAJIB PILIH VARIAN) -->
-                @if($product->variants && $product->variants->count() > 0)
+    @if($product->variants && $product->variants->count() > 0)
+        <!-- Produk dengan varian -->
+        <div class="mb-5">
+            <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">
+                Pilih Satuan / Varian <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+                <select name="variant_id" id="variant-select" required class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
+                    <option value="" disabled selected>--- PILIH VARIAN ---</option>
                     @foreach($product->variants as $variant)
                         <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}" data-stock="{{ $variant->stock }}">
                             {{ strtoupper($variant->name) }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
                         </option>
                     @endforeach
-                @else
-                    <!-- Jika tidak ada varian, tampilkan pesan -->
-                    <option value="" disabled>Tidak ada varian tersedia</option>
-                @endif
-            </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
-                <i class="fas fa-chevron-down text-[10px]"></i>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
+                    <i class="fas fa-chevron-down text-[10px]"></i>
+                </div>
             </div>
         </div>
-    </div>
+    @else
+        <!-- Produk satuan (tanpa varian) -->
+        <input type="hidden" name="variant_id" value="normal" id="variant-select">
+    @endif
 
-    <!-- Tombol Submit (Dinamis berdasarkan stock variant yang dipilih) -->
+    <!-- Tombol Submit (Dinamis berdasarkan stock variant yang dipilih atau produk satuan) -->
     <div class="hidden lg:block space-y-3">
         @if($product->variants && $product->variants->count() > 0)
             <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
@@ -106,9 +113,16 @@
                 Stok Habis
             </button>
         @else
-            <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
-                Tidak Tersedia (Belum Ada Varian)
-            </button>
+            @if($product->stock > 0)
+                <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
+                    <span>Masukkan Keranjang</span>
+                    <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            @else
+                <button type="button" id="out-of-stock-btn" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
+                    Stok Habis
+                </button>
+            @endif
         @endif
     </div>
     <!-- ... bagian sticky mobile juga menyesuaikan ... -->
@@ -131,54 +145,74 @@
         const stockBadge = document.getElementById('stock-badge');
         const addToCartBtn = document.getElementById('add-to-cart-btn');
         const outOfStockBtn = document.getElementById('out-of-stock-btn');
+        
+        // Data produk untuk produk satuan
+        const productPrice = {{ $product->price }};
+        const productStock = {{ $product->stock }};
+        const hasVariants = {{ $product->variants && $product->variants->count() > 0 ? 'true' : 'false' }};
 
         function updateStockBadge(stock) {
             if (stock <= 0) {
                 stockBadge.textContent = 'Stok Habis';
                 stockBadge.className = 'absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
-                addToCartBtn.classList.add('hidden');
-                outOfStockBtn.classList.remove('hidden');
+                if (addToCartBtn) addToCartBtn.classList.add('hidden');
+                if (outOfStockBtn) outOfStockBtn.classList.remove('hidden');
             } else if (stock <= 5) {
                 stockBadge.textContent = 'Stok Menipis';
                 stockBadge.className = 'absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
-                addToCartBtn.classList.remove('hidden');
-                outOfStockBtn.classList.add('hidden');
+                if (addToCartBtn) addToCartBtn.classList.remove('hidden');
+                if (outOfStockBtn) outOfStockBtn.classList.add('hidden');
             } else {
                 stockBadge.textContent = 'Ready Stock';
                 stockBadge.className = 'absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
-                addToCartBtn.classList.remove('hidden');
-                outOfStockBtn.classList.add('hidden');
+                if (addToCartBtn) addToCartBtn.classList.remove('hidden');
+                if (outOfStockBtn) outOfStockBtn.classList.add('hidden');
             }
         }
 
-        variantSelect.addEventListener('change', function() {
-            // Ambil data dari atribut data- di option yang dipilih
-            const selectedOption = this.options[this.selectedIndex];
-            const price = parseInt(selectedOption.getAttribute('data-price'));
-            const unit = selectedOption.getAttribute('data-unit');
-            const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+        // Jika produk memiliki varian, handle perubahan select
+        if (hasVariants && variantSelect && variantSelect.tagName === 'SELECT') {
+            variantSelect.addEventListener('change', function() {
+                // Ambil data dari atribut data- di option yang dipilih
+                const selectedOption = this.options[this.selectedIndex];
+                const price = parseInt(selectedOption.getAttribute('data-price'));
+                const unit = selectedOption.getAttribute('data-unit');
+                const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
 
-            // Format Rupiah
+                // Format Rupiah
+                const formattedPrice = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(price).replace('Rp', 'Rp ');
+
+                // Update UI
+                displayPrice.innerText = formattedPrice;
+                if(mobileDisplayPrice) mobileDisplayPrice.innerText = formattedPrice;
+                displayUnit.innerText = '/ ' + unit;
+                
+                // Update Stock Badge dan Tombol
+                updateStockBadge(stock);
+            });
+            
+            // Inisialisasi awal untuk produk dengan varian
+            const initialOption = variantSelect.options[variantSelect.selectedIndex];
+            if (initialOption && initialOption.value) {
+                const initialStock = parseInt(initialOption.getAttribute('data-stock')) || 0;
+                updateStockBadge(initialStock);
+            }
+        } else {
+            // Produk satuan (tanpa varian) - inisialisasi langsung
             const formattedPrice = new Intl.NumberFormat('id-ID', {
                 style: 'currency',
                 currency: 'IDR',
                 minimumFractionDigits: 0
-            }).format(price).replace('Rp', 'Rp ');
-
-            // Update UI
+            }).format(productPrice).replace('Rp', 'Rp ');
+            
             displayPrice.innerText = formattedPrice;
             if(mobileDisplayPrice) mobileDisplayPrice.innerText = formattedPrice;
-            displayUnit.innerText = '/ ' + unit;
-            
-            // Update Stock Badge dan Tombol
-            updateStockBadge(stock);
-        });
-        
-        // Inisialisasi awal
-        const initialOption = variantSelect.options[variantSelect.selectedIndex];
-        if (initialOption) {
-            const initialStock = parseInt(initialOption.getAttribute('data-stock')) || 0;
-            updateStockBadge(initialStock);
+            displayUnit.innerText = '/ satuan';
+            updateStockBadge(productStock);
         }
     });
 </script>
