@@ -19,6 +19,8 @@ class Order extends Model
         'external_id',
         'address',
         'note',
+        'resi',
+        'phone',
         'shipping_courier',
         'shipping_tracking'
     ];

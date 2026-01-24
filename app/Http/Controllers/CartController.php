@@ -80,6 +80,7 @@ class CartController extends Controller
     {
         // 1. Validasi: User wajib isi alamat
         $request->validate([
+            'phone'   => 'required|numeric',
             'address' => 'required|string|max:500',
             'note' => 'nullable|string|max:200',
         ]);
@@ -111,6 +112,7 @@ class CartController extends Controller
 
             $order = \App\Models\Order::create([
                 'user_id' => $user->id,
+                'phone'   => $request->phone,
                 'status' => 'pending',
                 'total_price' => $totalOrder,
                 'external_id' => $externalId, // Ini kolom baru yang tadi kita cek

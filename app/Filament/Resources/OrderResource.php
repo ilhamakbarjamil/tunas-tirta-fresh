@@ -9,6 +9,10 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Facades\Http;
+use Filament\Notifications\Notification;
 
 class OrderResource extends Resource
 {
@@ -29,9 +33,9 @@ class OrderResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('user_id')
                                     ->relationship('user', 'name')
-                                    ->disabled() 
+                                    ->disabled()
                                     ->label('Pelanggan'),
-                                
+
                                 Forms\Components\Select::make('status')
                                     ->options([
                                         'pending' => 'Pending (Belum Dibayar)',
@@ -57,7 +61,7 @@ class OrderResource extends Resource
                                     ->rows(3)
                                     ->columnSpanFull()
                                     ->disabled(), // Admin cuma baca, biar gak salah ubah
-                                
+
                                 Forms\Components\Textarea::make('note')
                                     ->label('Catatan User')
                                     ->placeholder('Tidak ada catatan')
@@ -78,7 +82,7 @@ class OrderResource extends Resource
                                             ->relationship('product', 'name')
                                             ->label('Produk')
                                             ->disabled(),
-                                        
+
                                         Forms\Components\TextInput::make('quantity')
                                             ->label('Qty')
                                             ->suffix('x')
@@ -101,32 +105,42 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
+                // 1. Ganti ID biasa dengan External ID (biar sama kayak Invoice)
+                Tables\Columns\TextColumn::make('external_id')
                     ->label('Order ID')
-                    ->sortable()
-                    ->searchable(),
-                
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Pelanggan')
                     ->searchable(),
 
-                // MENAMPILKAN ALAMAT DI TABEL DEPAN (Disingkat)
+                // 2. Kolom Alamat (Kode Mas yang lama)
                 Tables\Columns\TextColumn::make('address')
                     ->label('Alamat Tujuan')
-                    ->limit(20) // Biar tabel gak kepanjangan
-                    ->tooltip(fn ($state) => $state), // Hover buat lihat full
+                    ->limit(20)
+                    ->tooltip(fn($state) => $state),
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->money('IDR')
                     ->label('Total'),
 
+                // 3. Kolom Resi (BARU: Biar admin bisa lihat resi yg sudah diinput)
+                Tables\Columns\TextColumn::make('resi')
+                    ->label('No. Resi')
+                    ->copyable() // Biar bisa dicopy admin
+                    ->placeholder('-'),
+
+                // 4. Update Warna Status (Menyesuaikan Status Midtrans)
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'processed' => 'info',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',   // Kuning
+                        'paid' => 'success',      // Hijau (LUNAS)
+                        'shipped' => 'info',      // Biru (DIKIRIM)
+                        'failed' => 'danger',     // Merah
+                        'cancelled' => 'danger',  // Merah
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -136,7 +150,62 @@ class OrderResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
+                // Action Edit Bawaan
                 Tables\Actions\EditAction::make(),
+
+                // 🔥 ACTION BARU: INPUT RESI + KIRIM WA 🔥
+                Action::make('updateResi')
+                    ->label('Kirim Barang')
+                    ->icon('heroicon-o-truck') // Ikon Truk
+                    ->color('info') // Warna Biru
+                    ->modalHeading('Update Resi Pengiriman')
+                    ->modalDescription('Masukkan nomor resi. Notifikasi WA akan otomatis dikirim ke pembeli.')
+                    ->form([
+                        TextInput::make('resi')
+                            ->label('Nomor Resi (JNE/J&T/SiCepat)')
+                            ->required()
+                            ->placeholder('Contoh: JP1234567890'),
+                    ])
+                    ->action(function (Order $record, array $data) {
+                        // A. Update Database
+                        $record->update([
+                            'resi' => $data['resi'],
+                            'status' => 'shipped' // Ubah status jadi DIKIRIM
+                        ]);
+
+                        // B. Kirim WA Otomatis (Fonnte)
+                        // Catatan: Targetnya kita arahkan ke Admin dulu buat testing
+                        $targetPhone = $record->phone;
+
+                        if (empty($targetPhone)) {
+                            $targetPhone = env('WHATSAPP_ADMIN');
+                        }
+                        $token = env('FONNTE_TOKEN');
+
+                        $message = "*PAKET SEDANG DIKIRIM!* 🚚\n\n";
+                        $message .= "Halo kak {$record->user->name},\n";
+                        $message .= "Pesanan #{$record->external_id} sudah kami kirim.\n\n";
+                        $message .= "📦 *No. Resi:* {$data['resi']}\n\n";
+                        $message .= "Alamat: {$record->address}\n\n";
+                        $message .= "Terima kasih sudah belanja di Tunas Tirta Fresh! 🍎";
+
+                        try {
+                            Http::withHeaders(['Authorization' => $token])->post('https://api.fonnte.com/send', [
+                                'target' => $targetPhone,
+                                'message' => $message,
+                            ]);
+                        } catch (\Exception $e) {
+                        }
+
+                        // C. Notifikasi Sukses di Pojok Kanan Atas Admin
+                        Notification::make()
+                            ->title('Berhasil!')
+                            ->body('Resi disimpan & WA terkirim ke pembeli.')
+                            ->success()
+                            ->send();
+                    })
+                    // Tombol ini HANYA MUNCUL kalau statusnya 'paid' atau 'shipped'
+                    ->visible(fn(Order $record) => in_array($record->status, ['paid', 'shipped'])),
             ]);
     }
 
