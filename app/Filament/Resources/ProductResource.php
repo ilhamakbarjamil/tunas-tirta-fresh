@@ -3,122 +3,125 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
-use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
 use Illuminate\Support\Str;
+use Filament\Forms\Components\Toggle; // Import Toggle Form
+use Filament\Tables\Columns\ToggleColumn; // Import Toggle Tabel
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    // Icon Box/Keranjang
+    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+    protected static ?string $navigationLabel = 'Produk';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // Kita bungkus dalam Section biar rapi
-                Forms\Components\Section::make('Detail Produk')
-                    ->description('Isi informasi utama buah segar di sini.')
+                // --- BAGIAN 1: INFO UTAMA ---
+                Forms\Components\Section::make('Informasi Produk')
+                    ->description('Detail utama produk.')
                     ->schema([
-                        
-                        // 1. INPUT NAMA PRODUK (Yang tadi hilang)
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Produk')
                             ->required()
                             ->maxLength(255)
-                            // FITUR KEREN: Saat nama diketik, Slug otomatis terisi!
-                            ->live(onBlur: true) 
+                            ->live(onBlur: true)
                             ->afterStateUpdated(fn (string $operation, $state, Forms\Set $set) => 
                                 $operation === 'create' ? $set('slug', Str::slug($state)) : null
                             ),
 
-                        // Input Slug (Terisi otomatis, jadi kita disable saja biar aman)
                         Forms\Components\TextInput::make('slug')
-                            ->label('Slug URL (Otomatis)')
                             ->disabled()
-                            ->dehydrated() // Tetap dikirim ke database meski disabled
+                            ->dehydrated()
                             ->required()
                             ->unique(Product::class, 'slug', ignoreRecord: true),
 
-                        // 2. UPLOAD FOTO (Perbaikan dari TextInput jadi FileUpload)
-                        Forms\Components\FileUpload::make('image')
-                            ->label('Foto Produk')
-                            ->image() // Validasi harus file gambar (jpg, png)
-                            ->directory('products') // Disimpan di folder storage/app/public/products
-                            ->visibility('public') // Agar bisa diakses dari luar
-                            ->imagePreviewHeight('250') // Tinggi preview di admin
-                            ->required()
-                            ->columnSpanFull(), // Lebar penuh
-
-                        // Kategori
                         Forms\Components\Select::make('category_id')
                             ->label('Kategori')
                             ->relationship('category', 'name')
                             ->searchable()
                             ->preload()
-                            ->required(),
-
-                        // Harga & Stok (Berdampingan)
-                        Forms\Components\TextInput::make('price')
-                            ->label('Harga Satuan')
                             ->required()
-                            ->numeric()
-                            ->prefix('Rp'),
-                        
-                        Forms\Components\TextInput::make('stock')
-                            ->label('Stok Awal')
+                            ->columnSpanFull(),
+
+                        Forms\Components\FileUpload::make('image')
+                            ->label('Foto Produk')
+                            ->image()
+                            ->directory('products')
+                            ->visibility('public')
                             ->required()
-                            ->numeric()
-                            ->default(999),
+                            ->columnSpanFull(),
 
-                        Forms\Components\Section::make('Variasi Produk (Opsional)')
-    ->description('Klik tombol "Tambah Varian" jika produk memiliki pilihan (misal: 1kg, 500gr, Keranjang).')
-    ->schema([
-        Forms\Components\Repeater::make('variants')
-            ->label('Daftar Varian')
-            ->relationship() // Pastikan Model Product punya hasMany('variants')
-            ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nama Varian')
-                    ->placeholder('Contoh: 1 Kg')
-                    ->required(),
-
-                Forms\Components\TextInput::make('price')
-                    ->label('Harga')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->required(),
-
-                Forms\Components\TextInput::make('stock')
-                    ->label('Stok')
-                    ->numeric()
-                    ->default(10),
-            ])
-            ->columns(3) // Tampilan berjejer 3 kolom
-            ->defaultItems(0) // Default kosong
-            ->addActionLabel('Tambah Varian Baru')
-    ])->columnSpanFull(),
-
-                        // Deskripsi
                         Forms\Components\Textarea::make('description')
                             ->label('Deskripsi Singkat')
                             ->rows(3)
                             ->columnSpanFull(),
+                    ])->columns(2),
 
-                    ])->columns(2), // Menggunakan layout 2 kolom
+                // --- BAGIAN 2: HARGA & KETERSEDIAAN (YANG KITA UBAH) ---
+                Forms\Components\Section::make('Harga & Status')
+                    ->schema([
+                        Forms\Components\TextInput::make('price')
+                            ->label('Harga Utama')
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp'),
+
+                        // 🔥 REVISI YANG BENAR 🔥
+                        Toggle::make('is_available')
+                            ->label('Status Stok')
+                            // ->onLabel(...) <--- INI HAPUS AJA, GAK BISA DI FORM
+                            // ->offLabel(...) <--- INI JUGA HAPUS
+                            ->onIcon('heroicon-m-check') // Pakai Icon Centang
+                            ->offIcon('heroicon-m-x-mark') // Pakai Icon Silang
+                            ->onColor('success') // Hijau
+                            ->offColor('danger') // Merah
+                            ->inline(false) 
+                            ->helperText('Aktifkan jika barang tersedia. Matikan jika habis.') // Ganti pakai helper text biar jelas
+                            ->default(true)
+                            ->required(),
+
+                        Forms\Components\TextInput::make('unit')
+                            ->label('Satuan')
+                            ->placeholder('Pcs, Kg, Pack')
+                            ->required()
+                            ->default('Pcs'), 
+                    ])->columns(3),
+
+                // --- BAGIAN 3: VARIAN ---
+                Forms\Components\Section::make('Varian Produk (Opsional)')
+                    ->description('Isi jika produk punya pilihan (misal: Sirloin/Tenderloin).')
+                    ->collapsed()
+                    ->schema([
+                        Forms\Components\Repeater::make('variants')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nama Varian')
+                                    ->placeholder('Contoh: Sirloin / 1 Kg')
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('price')
+                                    ->label('Harga Varian')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->required(),
+                                
+                                // Stok Varian kita sembunyikan & set 999 biar gak ribet
+                                Forms\Components\Hidden::make('stock')
+                                    ->default(999),
+                            ])
+                            ->columns(2) // Jadi 2 kolom saja (Nama & Harga)
+                            ->addActionLabel('Tambah Varian Baru')
+                    ]),
             ]);
     }
 
@@ -126,35 +129,34 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                // 1. FOTO KECIL (Biar cantik)
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Foto'),
 
-                // 2. NAMA PRODUK (Bisa dicari)
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Produk')
-                    ->sortable()
-                    ->searchable(), // <--- PENTING: Biar bisa search di admin
-
-                // 3. KATEGORI
-                Tables\Columns\TextColumn::make('category.name')
-                    ->label('Kategori')
+                    ->searchable()
                     ->sortable(),
 
-                // 4. HARGA (Format Rupiah)
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Kategori'),
+
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
-                    ->money('IDR')
-                    ->sortable(),
+                    ->money('IDR'),
 
-                // 5. STOK
-                Tables\Columns\TextColumn::make('stock')
-                    ->label('Stok')
-                    ->numeric()
-                    ->sortable(),
+                // 🔥 SAKLAR LANGSUNG DI TABEL 🔥
+                // Bisa klik langsung ON/OFF tanpa masuk menu edit
+                ToggleColumn::make('is_available')
+                    ->label('Ketersediaan')
+                    ->onColor('success')
+                    ->offColor('danger'),
+
+                Tables\Columns\TextColumn::make('unit')
+                    ->label('Satuan')
+                    ->badge()
+                    ->color('gray'),
             ])
             ->filters([
-                // Filter Kategori (Opsional, biar gampang sortir)
                 Tables\Filters\SelectFilter::make('category_id')
                     ->label('Kategori')
                     ->relationship('category', 'name'),

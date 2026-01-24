@@ -95,6 +95,15 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Keranjang kosong, mau beli angin?');
         }
 
+        foreach ($carts as $cart) {
+            if (!$cart->product->is_available) {
+                // KICK USER BALIK KE KERANJANG
+                return redirect()->route('cart.index')->with('error', 
+                    'Maaf, produk "' . $cart->product->name . '" baru saja habis/tidak tersedia!'
+                );
+            }
+        }
+
         // 3. Mulai Transaksi Database (Biar aman)
         DB::beginTransaction();
         try {
