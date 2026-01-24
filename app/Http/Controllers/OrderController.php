@@ -3,78 +3,100 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Product;        // <--- Wajib Import ini
-// use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // <--- Wajib Import ini (Buat Transaksi)
-use Xendit\Configuration;
-use Xendit\Invoice\InvoiceApi;
+use Illuminate\Support\Facades\Http; // WAJIB ADA: Buat kirim request ke Fonnte
+use Midtrans\Config;
+use Midtrans\Transaction;
 
 class OrderController extends Controller
 {
+    public function __construct()
+    {
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+    }
+
     public function index()
     {
         // 1. Ambil Order User
         $orders = Order::where('user_id', Auth::id())
-                        ->with(['items.product', 'items.variant'])
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-
-        // 2. Cek Status Pembayaran ke Xendit
-        Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
-        $apiInstance = new InvoiceApi();
-
+        // 2. CEK STATUS (Auto-Check)
         foreach ($orders as $order) {
-            // Hanya cek yang pending & punya external_id (Order Xendit)
-            if ($order->status === 'pending' && !empty($order->external_id)) {
-                
+            if ($order->status == 'pending' && $order->external_id) {
                 try {
-                    // Cari Invoice di Xendit berdasarkan ID Order kita
-                    $list_invoices = $apiInstance->getInvoices(null, $order->external_id);
+                    $status = Transaction::status($order->external_id); 
+                    
+                    $newStatus = null;
+                    if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
+                        $newStatus = 'paid';
+                    } else if ($status->transaction_status == 'expire' || $status->transaction_status == 'cancel') {
+                        $newStatus = 'failed';
+                    }
 
-                    if (count($list_invoices) > 0) {
-                        $invoice = $list_invoices[0];
+                    // JIKA STATUS BERUBAH
+                    if ($newStatus && $newStatus != $order->status) {
+                        $order->update(['status' => $newStatus]);
 
-                        // --- LOGIKA UTAMA DI SINI ---
-                        if ($invoice['status'] === 'PAID' || $invoice['status'] === 'SETTLED') {
-                            
-                            // Mulai Transaksi Database (Biar Aman)
-                            DB::transaction(function () use ($order) {
-                                // A. Update Status jadi 'processed'
-                                $order->update(['status' => 'processed']);
-
-                                // B. Kurangi Stok Barang
-                                foreach ($order->items as $item) {
-                                    $product = Product::find($item->product_id);
-                                    
-                                    // Cek apakah produknya ada?
-                                    if ($product) {
-                                        // Kurangi stok sesuai jumlah beli
-                                        // Pastikan di tabel products ada kolom 'stock'
-                                        if ($product->stock >= $item->quantity) {
-                                            $product->decrement('stock', $item->quantity);
-                                        } else {
-                                            // Opsional: Kalau stok minus, set jadi 0
-                                            $product->update(['stock' => 0]);
-                                        }
-                                    }
-                                }
-                            });
-
-                        } elseif ($invoice['status'] === 'EXPIRED') {
-                            $order->update(['status' => 'cancelled']);
+                        // 🔥 FITUR WA: Jika LUNAS, Kirim Notif 🔥
+                        if ($newStatus == 'paid') {
+                            $this->sendWhatsAppNotification($order);
                         }
                     }
 
                 } catch (\Exception $e) {
-                    // Diamkan error koneksi, lanjut ke order berikutnya
-                    continue;
+                    continue; 
                 }
             }
         }
 
+        // Refresh data setelah update
+        $orders = Order::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('orders.index', compact('orders'));
+    }
+
+    public function show($id)
+    {
+        $order = Order::with('items.product')->findOrFail($id);
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        return view('orders.show', compact('order'));
+    }
+
+    // --- FUNGSI KIRIM WA ---
+    private function sendWhatsAppNotification($order)
+    {
+        $token = env('FONNTE_TOKEN');
+        $adminPhone = env('WHATSAPP_ADMIN');
+        
+        // Buat Link Invoice
+        $invoiceLink = route('orders.show', $order->id);
+
+        // Pesan untuk Admin
+        $message  = "*LAPORAN ORDER LUNAS!* ✅\n\n";
+        $message .= "No Order: #{$order->external_id}\n";
+        $message .= "Pembeli: " . Auth::user()->name . "\n";
+        $message .= "Total: Rp " . number_format($order->total_price, 0, ',', '.') . "\n\n";
+        $message .= "Segera proses pesanan ini!\n";
+        $message .= "🔗 Link: $invoiceLink";
+
+        try {
+            // Kirim ke Admin
+            Http::withHeaders(['Authorization' => $token])->post('https://api.fonnte.com/send', [
+                'target' => $adminPhone,
+                'message' => $message,
+            ]);
+        } catch (\Exception $e) {
+            // Error diam-diam saja biar user tidak terganggu
+        }
     }
 }
