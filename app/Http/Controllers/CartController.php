@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductVariant; // <--- INI YANG PENTING (Tambahkan ini) 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // Tambah DB Transaction biar aman
@@ -36,26 +37,59 @@ class CartController extends Controller
             return redirect()->route('login')->with('error', 'Silakan login dulu.');
         }
 
-        $user = Auth::user();
-        $variantId = $request->input('variant_id');
+        $product = Product::findOrFail($productId);
+        $variantIdInput = $request->input('variant_id');
+        $quantity = $request->input('quantity', 1);
 
-        $existingCart = Cart::where('user_id', $user->id)
+        // Tentukan apakah menggunakan varian atau produk satuan
+        $useVariant = !empty($variantIdInput) && $variantIdInput !== 'normal';
+        
+        if ($useVariant) {
+            // AMBIL STOK DARI TABEL VARIAN
+            $variant = ProductVariant::where('id', $variantIdInput)
+                ->where('product_id', $productId)
+                ->firstOrFail();
+            
+            $maxStock = $variant->stock;
+            $displayName = $product->name . " (" . $variant->name . ")";
+        } else {
+            // AMBIL STOK DARI PRODUK (SATUAN)
+            $maxStock = $product->stock;
+            $displayName = $product->name;
+            $variantIdInput = null; // Pastikan null untuk produk satuan
+        }
+
+        // VALIDASI STOK
+        if ($maxStock <= 0) {
+            return redirect()->back()->with('error', "❌ Stok untuk $displayName saat ini habis.");
+        }
+
+        if ($quantity > $maxStock) {
+            return redirect()->back()->with('error', "❌ Stok tidak cukup. Hanya tersedia $maxStock pcs.");
+        }
+
+        // SIMPAN KE KERANJANG (Logika Upsert: Jika sudah ada, tambah quantity)
+        $cart = Cart::where('user_id', auth()->id())
             ->where('product_id', $productId)
-            ->where('product_variant_id', $variantId)
+            ->where('product_variant_id', $variantIdInput)
             ->first();
 
-        if ($existingCart) {
-            $existingCart->increment('quantity', $request->input('quantity', 1));
+        if ($cart) {
+            $totalQuantity = $cart->quantity + $quantity;
+            if ($totalQuantity > $maxStock) {
+                return redirect()->back()->with('error', "❌ Gagal! Total di keranjang melebihi stok tersedia.");
+            }
+            $cart->increment('quantity', $quantity);
         } else {
             Cart::create([
-                'user_id' => $user->id,
+                'user_id' => auth()->id(),
                 'product_id' => $productId,
-                'product_variant_id' => $variantId,
-                'quantity' => $request->input('quantity', 1)
+                'product_variant_id' => $variantIdInput,
+                'quantity' => $quantity
             ]);
         }
 
-        return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
+        return redirect()->back()->with('success', "✅ $displayName berhasil masuk keranjang!");
     }
 
     public function update(Request $request, $id)
@@ -63,6 +97,26 @@ class CartController extends Controller
         $cart = Cart::where('user_id', Auth::id())->where('id', $id)->first();
         if ($cart) {
             $qty = max(1, $request->input('quantity'));
+            
+            // Validasi stock - DARI VARIAN ATAU PRODUK
+            if ($cart->product_variant_id) {
+                // Menggunakan stok varian
+                $maxStock = $cart->variant->stock;
+                $displayName = $cart->product->name . " (" . $cart->variant->name . ")";
+            } else {
+                // Menggunakan stok produk (satuan)
+                $maxStock = $cart->product->stock;
+                $displayName = $cart->product->name;
+            }
+            
+            if ($maxStock <= 0) {
+                return redirect()->back()->with('error', "❌ Stok untuk $displayName saat ini habis.");
+            }
+            
+            if ($qty > $maxStock) {
+                return redirect()->back()->with('error', "❌ Stok tidak cukup. Hanya tersedia $maxStock pcs.");
+            }
+            
             $cart->update(['quantity' => $qty]);
         }
         return redirect()->back();
@@ -75,6 +129,55 @@ class CartController extends Controller
             $cart->delete();
         }
         return redirect()->back()->with('success', 'Produk dihapus dari keranjang');
+    }
+
+    public function decrease($id)
+    {
+        // Cari item keranjang berdasarkan ID
+        $cartItem = \App\Models\Cart::where('id', $id)
+            ->where('user_id', auth()->id()) // Pastikan milik user yang login
+            ->firstOrFail();
+
+        if ($cartItem->quantity > 1) {
+            // Jika jumlah lebih dari 1, kurangi 1
+            $cartItem->decrement('quantity');
+            return redirect()->back()->with('success', 'Jumlah produk berhasil dikurangi.');
+        } else {
+            // Jika jumlah sudah 1 dan ditekan kurang, biasanya dihapus atau biarkan saja
+            // Pilih salah satu:
+
+            // Opsi A: Hapus item jika dikurangi saat jumlahnya 1
+            $cartItem->delete();
+            return redirect()->back()->with('success', 'Produk dihapus dari keranjang.');
+
+            /* 
+            Opsi B: Jangan lakukan apa-apa (tetap 1)
+            return redirect()->back()->with('info', 'Minimal pembelian adalah 1.'); 
+            */
+        }
+    }
+
+    public function increase($id)
+    {
+        $cartItem = \App\Models\Cart::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        // Cek stok - DARI VARIAN ATAU PRODUK
+        if ($cartItem->product_variant_id) {
+            // Menggunakan stok varian
+            $maxStock = $cartItem->variant->stock;
+        } else {
+            // Menggunakan stok produk (satuan)
+            $maxStock = $cartItem->product->stock;
+        }
+
+        if ($cartItem->quantity < $maxStock) {
+            $cartItem->increment('quantity');
+            return redirect()->back();
+        }
+
+        return redirect()->back()->with('error', 'Stok sudah maksimal.');
     }
 
     // --- 2. FUNGSI CHECKOUT (UBAHAN TOTAL MIDTRANS) ---
@@ -93,11 +196,35 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Keranjang kosong!');
         }
 
-        // Hitung Total
+        // Validasi Stock sebelum checkout - DARI VARIAN ATAU PRODUK
+        foreach ($carts as $cart) {
+            if ($cart->product_variant_id) {
+                // Validasi stok varian
+                $variant = ProductVariant::find($cart->product_variant_id);
+                if (!$variant || $variant->stock < $cart->quantity) {
+                    $displayName = $cart->product->name . " (" . ($variant ? $variant->name : 'Varian') . ")";
+                    $availableStock = $variant ? $variant->stock : 0;
+                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: $availableStock pcs, dibutuhkan: {$cart->quantity} pcs.");
+                }
+            } else {
+                // Validasi stok produk (satuan)
+                if ($cart->product->stock < $cart->quantity) {
+                    $displayName = $cart->product->name;
+                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: {$cart->product->stock} pcs, dibutuhkan: {$cart->quantity} pcs.");
+                }
+            }
+        }
+
+        // Hitung Total - DARI VARIAN ATAU PRODUK
         $totalOrder = 0;
         foreach ($carts as $cart) {
-            $price = $cart->variant ? $cart->variant->price : $cart->product->price;
-            $totalOrder += $price * $cart->quantity;
+            if ($cart->product_variant_id && $cart->variant) {
+                // Menggunakan harga varian
+                $totalOrder += $cart->variant->price * $cart->quantity;
+            } else {
+                // Menggunakan harga produk (satuan)
+                $totalOrder += $cart->product->price * $cart->quantity;
+            }
         }
 
         // --- MULAI TRANSAKSI DATABASE ---
@@ -116,16 +243,20 @@ class CartController extends Controller
                 // 'snap_token' => null, // Nanti diisi di bawah
             ]);
 
-            // B. Pindahkan Item ke OrderItem
-
+            // B. Pindahkan Item ke OrderItem - DARI VARIAN ATAU PRODUK
             foreach ($carts as $cart) {
-                $price = $cart->variant ? $cart->variant->price : $cart->product->price;
+                if ($cart->product_variant_id && $cart->variant) {
+                    // Menggunakan harga varian
+                    $price = $cart->variant->price;
+                } else {
+                    // Menggunakan harga produk (satuan)
+                    $price = $cart->product->price;
+                }
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $cart->product_id,
-                    // GANTI DI BAWAH INI:
-                    'product_variant_id' => $cart->product_variant_id, // Sesuaikan dengan nama kolom di tabel carts
+                    'product_variant_id' => $cart->product_variant_id, // Bisa null untuk produk satuan
                     'quantity' => $cart->quantity,
                     'price' => $price,
                 ]);
