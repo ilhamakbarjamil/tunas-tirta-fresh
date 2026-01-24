@@ -56,12 +56,11 @@ class ProductResource extends Resource
                         // 2. UPLOAD FOTO (Perbaikan dari TextInput jadi FileUpload)
                         Forms\Components\FileUpload::make('image')
                             ->label('Foto Produk')
-                            ->image() // Validasi harus file gambar (jpg, png)
-                            ->directory('products') // Disimpan di folder storage/app/public/products
-                            ->visibility('public') // Agar bisa diakses dari luar
-                            ->imagePreviewHeight('250') // Tinggi preview di admin
+                            ->image()
+                            ->directory('products')
+                            ->imagePreviewHeight('250')
                             ->required()
-                            ->columnSpanFull(), // Lebar penuh
+                            ->columnSpanFull(),
 
                         // Kategori
                         Forms\Components\Select::make('category_id')

@@ -30,7 +30,11 @@ class EditProduct extends EditRecord
                     'price' => 'Harga wajib diisi untuk produk satuan.',
                 ]);
             }
-            if (empty($data['stock']) && $data['stock'] !== '0') {
+            // Cek apakah stock ada di array, jika tidak set default 0
+            if (!isset($data['stock'])) {
+                $data['stock'] = 0;
+            }
+            if (empty($data['stock']) && $data['stock'] !== '0' && $data['stock'] !== 0) {
                 throw ValidationException::withMessages([
                     'stock' => 'Stok wajib diisi untuk produk satuan.',
                 ]);
@@ -38,7 +42,7 @@ class EditProduct extends EditRecord
         } else {
             // Produk varian: pastikan semua varian valid
             foreach ($data['variants'] as $index => $variant) {
-                if (empty($variant['name']) || empty($variant['price']) || empty($variant['stock'])) {
+                if (empty($variant['name']) || empty($variant['price']) || !isset($variant['stock'])) {
                     throw ValidationException::withMessages([
                         'variants' => "Varian #" . ($index + 1) . " harus lengkap (nama, harga, stok).",
                     ]);
