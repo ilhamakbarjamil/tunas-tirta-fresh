@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View; 
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Config;
 use App\Models\Category;
 use App\Models\Announcement;
-use Illuminate\Support\Facades\URL;
+use App\Models\Product;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,60 +25,49 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // LOGIKA: Jika APP_URL di .env mengandung 'ngrok', paksa pakai HTTPS
-        // if (str_contains(config('app.url'), 'ngrok')) {
-        //     URL::forceScheme('https');
-        // }
-        
-        try {
-            View::share('globalCategories', Category::all());
-        } catch (\Exception $e) {
-            // Jaga-jaga kalau tabel belum ada (pas migrate fresh), biar gak error
+
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+        // 1. PENANGANAN HTTPS (FIX UNTUK CLOUDFLARE/NGROK)
+        if (str_contains(config('app.url'), 'https://')) {
+            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+            \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
+        // Paksa Livewire mengikuti URL utama
+        \Illuminate\Support\Facades\Config::set('livewire.asset_url', config('app.url'));
+
+        // Paksa livewire menggunakan path yang benar agar dashboard & upload lancar
+        Config::set('livewire.asset_url', config('app.url'));
+
+
+        // 2. SHARING DATA KE SEMUA VIEW (GLOBAL DATA)
         try {
-            $activePromo = \App\Models\Announcement::where('is_active', true)->latest()->first();
-            View::share('activePromo', $activePromo);
-        } catch (\Exception $e) {
-            // Biar gak error pas migrate fresh
-        }
+            // A. Share Semua Kategori
+            $globalCategories = Category::all();
+            View::share('globalCategories', $globalCategories);
 
-        try {
-            // 1. Share Semua Kategori (Untuk List Menu Kiri)
-            View::share('globalCategories', \App\Models\Category::all());
-
-            // 2. Share Data Promo
-            $activePromo = \App\Models\Announcement::where('is_active', true)->latest()->first();
+            // B. Share Data Promo Aktif
+            $activePromo = Announcement::where('is_active', true)->latest()->first();
             View::share('activePromo', $activePromo);
 
-            // --- DATA MEGA MENU (AMBIL 3 PRODUK ACAK PER KATEGORI) ---
+            // C. DATA MEGA MENU (Dioptimasi agar lebih ringan)
+            $categoriesToShare = [
+                'freshMenuProducts' => 'fresh-fruits',
+                'frozenMenuProducts' => 'frozen-fruits',
+                'drinkMenuProducts' => 'fresh-drinks',
+                'packageMenuProducts' => 'packages',
+            ];
 
-            // A. Buah Segar
-            $freshMenuProducts = \App\Models\Product::whereHas('category', function($q) {
-                $q->where('slug', 'fresh-fruits');
-            })->limit(3)->inRandomOrder()->get();
-            View::share('freshMenuProducts', $freshMenuProducts);
-
-            // B. Buah Beku (Frozen)
-            $frozenMenuProducts = \App\Models\Product::whereHas('category', function($q) {
-                $q->where('slug', 'frozen-fruits');
-            })->limit(3)->inRandomOrder()->get();
-            View::share('frozenMenuProducts', $frozenMenuProducts);
-
-            // C. Jus Segar (Drinks)
-            $drinkMenuProducts = \App\Models\Product::whereHas('category', function($q) {
-                $q->where('slug', 'fresh-drinks');
-            })->limit(3)->inRandomOrder()->get();
-            View::share('drinkMenuProducts', $drinkMenuProducts);
-
-            // D. Paket Hemat (Packages)
-            $packageMenuProducts = \App\Models\Product::whereHas('category', function($q) {
-                $q->where('slug', 'packages');
-            })->limit(3)->inRandomOrder()->get();
-            View::share('packageMenuProducts', $packageMenuProducts);
+            foreach ($categoriesToShare as $viewVar => $slug) {
+                View::share($viewVar, Product::whereHas('category', function ($q) use ($slug) {
+                    $q->where('slug', $slug);
+                })->limit(3)->inRandomOrder()->get());
+            }
 
         } catch (\Exception $e) {
-            // Error handling diam-diam
+            // Jaga-jaga agar tidak error saat proses migrasi database
         }
     }
 }

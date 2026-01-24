@@ -152,12 +152,34 @@
         }
     });
 
-    function closePromo() {
-        const modal = document.getElementById('promo-modal');
-        if(modal) {
-            modal.classList.add('hidden');
+    <script>
+        // Logic modal & update price tetap sama, hanya menyesuaikan ID jika perlu
+        document.addEventListener("DOMContentLoaded", function () {
             const currentPromoId = "{{ $activePromo ? $activePromo->id : 'none' }}";
-            sessionStorage.setItem('last_seen_promo_id', currentPromoId);
+            const lastSeenId = sessionStorage.getItem('last_seen_promo_id');
+
+            if (currentPromoId !== 'none' && lastSeenId != currentPromoId) {
+                setTimeout(() => {
+                    const modal = document.getElementById('promo-modal');
+                    const content = document.getElementById('promo-content');
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                        setTimeout(() => {
+                            content.classList.remove('scale-95');
+                            content.classList.add('scale-100');
+                        }, 50);
+                    }
+                }, 800);
+            }
+        });
+
+        function closePromo() {
+            const modal = document.getElementById('promo-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                const currentPromoId = "{{ $activePromo ? $activePromo->id : 'none' }}";
+                sessionStorage.setItem('last_seen_promo_id', currentPromoId);
+            }
         }
     }
 
@@ -176,6 +198,5 @@
              var unitLabel = priceDisplay.querySelector('span') ? priceDisplay.querySelector('span').outerHTML : '';
             priceDisplay.innerHTML = formattedPrice + ' ' + unitLabel;
         }
-    }
-</script>
+    </script>
 @endsection

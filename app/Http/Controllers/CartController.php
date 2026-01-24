@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Config;
@@ -24,7 +26,7 @@ class CartController extends Controller
     }
     public function index()
     {
-        $carts = Auth::user()->carts()->with(['product', 'variant'])->get();
+        $carts = Cart::where('user_id', Auth::id())->with(['product', 'variant'])->get();
         return view('cart.index', compact('carts'));
     }
 
@@ -34,35 +36,60 @@ class CartController extends Controller
             return redirect()->route('login')->with('error', 'Silakan login dulu.');
         }
 
-        $user = Auth::user();
-        $variantId = $request->input('variant_id');
+        $product = Product::findOrFail($productId);
+        $variantIdInput = $request->input('variant_id');
+        $quantity = $request->input('quantity', 1);
 
-        $existingCart = Cart::where('user_id', $user->id)
+        $useVariant = !empty($variantIdInput) && $variantIdInput !== 'normal';
+
+        if ($useVariant) {
+            $variant = ProductVariant::where('id', $variantIdInput)->where('product_id', $productId)->firstOrFail();
+            $maxStock = $variant->stock;
+            $displayName = $product->name . " (" . $variant->name . ")";
+        } else {
+            $maxStock = $product->stock;
+            $displayName = $product->name;
+            $variantIdInput = null;
+        }
+
+        if ($maxStock <= 0)
+            return redirect()->back()->with('error', "❌ Stok $displayName habis.");
+        if ($quantity > $maxStock)
+            return redirect()->back()->with('error', "❌ Stok sisa $maxStock.");
+
+        $cart = Cart::where('user_id', auth()->id())
             ->where('product_id', $productId)
-            ->where('product_variant_id', $variantId)
+            ->where('product_variant_id', $variantIdInput)
             ->first();
 
-        if ($existingCart) {
-            $existingCart->increment('quantity', $request->input('quantity', 1));
+        if ($cart) {
+            if (($cart->quantity + $quantity) > $maxStock)
+                return redirect()->back()->with('error', "❌ Total melebihi stok.");
+            $cart->increment('quantity', $quantity);
         } else {
             Cart::create([
-                'user_id' => $user->id,
+                'user_id' => auth()->id(),
                 'product_id' => $productId,
-                'product_variant_id' => $variantId,
-                'quantity' => $request->input('quantity', 1)
+                'product_variant_id' => $variantIdInput,
+                'quantity' => $quantity
             ]);
         }
 
-        return redirect()->back()->with('show_cart', true)->with('success', 'Produk berhasil ditambahkan!');
-    }
-
-    public function destroy($id)
-    {
-        Cart::find($id)->delete();
-        return redirect()->back()->with('show_cart', true)->with('success', 'Produk dihapus.');
+        return redirect()->back()->with('success', "✅ $displayName masuk keranjang!");
     }
 
     public function decrease($id)
+    {
+        $cartItem = Cart::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        if ($cartItem->quantity > 1) {
+            $cartItem->decrement('quantity');
+        } else {
+            $cartItem->delete();
+        }
+        return redirect()->back();
+    }
+
+    public function increase($id)
     {
         $cart = Cart::find($id);
         if ($cart) {
@@ -72,11 +99,10 @@ class CartController extends Controller
                 $cart->delete();
             }
         }
-        return redirect()->back()->with('show_cart', true);
+        return redirect()->back()->with('error', 'Stok maksimal.');
     }
 
-    // --- FITUR UTAMA: CHECKOUT VIA WHATSAPP ---
-    public function checkout(Request $request)
+    public function destroy($id)
     {
         // 1. Validasi: User wajib isi alamat
         $request->validate([
@@ -85,6 +111,9 @@ class CartController extends Controller
             'note' => 'nullable|string|max:200',
         ]);
 
+    public function checkout(Request $request)
+    {
+        $request->validate(['address' => 'required|string|max:500']);
         $user = Auth::user();
 
         // 2. Cek Keranjang

@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+
 <div class="container mx-auto px-3 md:px-4 py-6 md:py-8">
     
     <div class="flex items-center justify-between mb-6 md:mb-8 border-b-2 border-gray-100 pb-4">
@@ -16,12 +18,12 @@
 
     <div class="space-y-4 md:space-y-6">
         @forelse($orders as $order)
-        <div class="bg-white rounded-xl border border-gray-200 hover:border-primary transition-all duration-200 flex flex-col group overflow-hidden shadow-sm">
+        <div class="bg-white rounded-xl border border-gray-200 hover:border-green-500 transition-all duration-200 flex flex-col group overflow-hidden shadow-sm">
             
             <div class="p-3 md:p-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div class="flex items-center gap-3">
                     <div class="bg-gray-100 px-2 py-1 rounded text-[10px] md:text-[11px] font-black text-gray-600 uppercase tracking-widest">
-                        #{{ $order->external_id ?? $order->id }}
+                        #{{ $order->id }}
                     </div>
                     <span class="text-[11px] md:text-sm text-gray-400 font-medium">
                         {{ $order->created_at->format('d M Y, H:i') }}
@@ -31,7 +33,7 @@
                 <div class="w-full sm:w-auto text-left">
                     @if($order->status == 'pending')
                         <span class="inline-block bg-yellow-500 text-white text-[9px] md:text-[10px] font-black px-3 py-1.5 uppercase tracking-widest shadow-sm rounded">
-                            Menunggu Pembayaran
+                            Belum Dibayar
                         </span>
                     @elseif($order->status == 'paid' || $order->status == 'settlement' || $order->status == 'capture')
                         <span class="inline-block bg-green-600 text-white text-[9px] md:text-[10px] font-black px-3 py-1.5 uppercase tracking-widest shadow-sm rounded">
@@ -93,7 +95,7 @@
                             class="flex-1 md:flex-none bg-gray-900 hover:bg-primary text-white font-bold h-10 px-6 md:px-8 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-[10px] md:text-xs uppercase tracking-wider">
                             <span>BAYAR SEKARANG</span>
                             <i class="fas fa-chevron-right text-[9px] md:text-[10px]"></i>
-                        </a>
+                        </button>
                     @endif
                 </div>
             </div>

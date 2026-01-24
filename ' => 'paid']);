@@ -1,0 +1,16 @@
+[90m= [39m[34;4mApp\Models\Order[39;24m {#7024
+    [34mid[39m: [35m28[39m,
+    [34mexternal_id[39m: "[32mORD-1769024840-985[39m",
+    [34muser_id[39m: [35m3[39m,
+    [34mstatus[39m: "[32mpaid[39m",
+    [34maddress[39m: "[32mh[39m",
+    [34mnote[39m: "[32mh[39m",
+    [34mtotal_price[39m: "[32m23000[39m",
+    [34mshipping_courier[39m: "[32mMenyesuaikan[39m",
+    [34mshipping_tracking[39m: [36mnull[39m,
+    [34mpayment_url[39m: "[32mhttps://checkout-staging.xendit.co/web/69712d49985277179038550b[39m",
+    [34msnap_token[39m: [36mnull[39m,
+    [34mcreated_at[39m: "[32m2026-01-22 02:47:21[39m",
+    [34mupdated_at[39m: "[32m2026-01-22 02:47:35[39m",
+  }
+

@@ -14,22 +14,26 @@
     </div>
 </div>
 
-<!-- Tambahkan pb-24 agar konten tidak tertutup tombol sticky di mobile -->
 <div class="container mx-auto px-4 py-6 md:py-10 pb-24 lg:pb-10">
     <div class="flex flex-col lg:flex-row gap-8 lg:gap-16">
         
         <!-- Kolom Gambar -->
         <div class="w-full lg:w-7/12">
             <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 sm:p-10 flex justify-center items-center relative overflow-hidden group min-h-[300px] md:min-h-[450px]">
-                @if($product->stock <= 5 && $product->stock > 0)
-                    <div class="absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
-                        Stok Menipis
-                    </div>
-                @elseif($product->stock > 5)
-                    <div class="absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
-                        Ready Stock
-                    </div>
-                @endif
+                <!-- Stock Badge (Dinamis berdasarkan variant yang dipilih atau produk satuan) -->
+                <div id="stock-badge" class="absolute top-4 left-4 bg-gray-500 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10">
+                    @if($product->variants && $product->variants->count() > 0)
+                        Pilih Varian
+                    @else
+                        @if($product->stock <= 0)
+                            Stok Habis
+                        @elseif($product->stock <= 5)
+                            Stok Menipis
+                        @else
+                            Ready Stock
+                        @endif
+                    @endif
+                </div>
 
                 <img src="{{ asset('storage/' . $product->image) }}" 
                      alt="{{ $product->name }}" 
@@ -51,13 +55,14 @@
                 <p class="text-[9px] md:text-[10px] font-bold uppercase tracking-wide text-gray-400">Terjual 150+</p>
             </div>
 
+            <!-- Bagian Harga (Akan diupdate oleh JS) -->
             <div class="mb-6 md:mb-8">
-                <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Harga Terbaik</p>
+                <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Harga Terpilih</p>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-xl md:text-2xl font-black text-primary">
+                    <span id="display-price" class="text-xl md:text-2xl font-black text-primary" data-base-price="{{ $product->price }}">
                         Rp {{ number_format($product->price, 0, ',', '.') }}
                     </span>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">/ pack</span>
+                    <span id="display-unit" class="text-[10px] font-bold text-gray-400 uppercase">/ pack</span>
                 </div>
             </div>
 
@@ -68,69 +73,147 @@
                 </p>
             </div>
 
-            <!-- Form Start -->
-            <form action="{{ route('cart.add', $product->id) }}" method="POST" id="add-to-cart-form" class="mt-auto">
-                @csrf
-                
-                @if($product->variants && $product->variants->count() > 0)
-                    <div class="mb-5">
-                        <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">Pilih Varian</label>
-                        <div class="relative">
-                            <select name="variant_id" class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
-                                @foreach($product->variants as $variant)
-                                    <option value="{{ $variant->id }}">
-                                        {{ $variant->name }} (+ Rp {{ number_format($variant->price - $product->price, 0, ',', '.') }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
-                                <i class="fas fa-chevron-down text-[10px]"></i>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Tombol Desktop (Hidden on Mobile) -->
-                <div class="hidden lg:block space-y-3">
-                    @if($product->stock > 0)
-                        <button type="submit" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
-                            <span>Masukkan Keranjang</span>
-                            <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
-                        </button>
-                    @else
-                         <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
-                            Stok Habis
-                        </button>
-                    @endif
+            <!-- Bagian Form di dalam product.blade.php -->
+<form action="{{ route('cart.add', $product->id) }}" method="POST" id="add-to-cart-form" class="mt-auto">
+    @csrf
+    
+    @if($product->variants && $product->variants->count() > 0)
+        <!-- Produk dengan varian -->
+        <div class="mb-5">
+            <label class="block text-[9px] md:text-[10px] font-black text-dark uppercase tracking-widest mb-2">
+                Pilih Satuan / Varian <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+                <select name="variant_id" id="variant-select" required class="w-full appearance-none bg-white border border-gray-200 text-dark font-bold py-3 px-4 rounded-none focus:outline-none focus:border-dark transition-colors text-[11px] uppercase tracking-wider">
+                    <option value="" disabled selected>--- PILIH VARIAN ---</option>
+                    @foreach($product->variants as $variant)
+                        <option value="{{ $variant->id }}" data-price="{{ $variant->price }}" data-unit="{{ strtolower($variant->name) }}" data-stock="{{ $variant->stock }}">
+                            {{ strtoupper($variant->name) }} (Rp {{ number_format($variant->price, 0, ',', '.') }})
+                        </option>
+                    @endforeach
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-dark">
+                    <i class="fas fa-chevron-down text-[10px]"></i>
                 </div>
+            </div>
+        </div>
+    @else
+        <!-- Produk satuan (tanpa varian) -->
+        <input type="hidden" name="variant_id" value="normal" id="variant-select">
+    @endif
 
-                <!-- Tombol Sticky Mobile (Hanya muncul di Mobile) -->
-                @if($product->stock > 0)
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 lg:hidden z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
-                        <div class="max-w-xl mx-auto flex items-center gap-4">
-                            <div class="flex-shrink-0">
-                                <p class="text-[8px] font-bold uppercase text-gray-400 tracking-widest mb-0.5">Harga</p>
-                                <p class="text-base font-black text-primary leading-none">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
-                            </div>
-                            <button type="submit" class="flex-1 bg-dark text-white py-3.5 font-bold uppercase tracking-widest text-[10px] hover:bg-primary active:scale-95 transition-all">
-                                + Keranjang
-                            </button>
-                        </div>
-                    </div>
-                @else
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 lg:hidden z-50">
-                        <button type="button" disabled class="w-full bg-gray-100 text-gray-400 py-3.5 font-bold uppercase tracking-widest text-[10px] cursor-not-allowed">
-                            Stok Habis
-                        </button>
-                    </div>
-                @endif
-            </form>
+    <!-- Tombol Submit (Dinamis berdasarkan stock variant yang dipilih atau produk satuan) -->
+    <div class="hidden lg:block space-y-3">
+        @if($product->variants && $product->variants->count() > 0)
+            <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
+                <span>Masukkan Keranjang</span>
+                <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
+            </button>
+            <button type="button" id="out-of-stock-btn" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed hidden">
+                Stok Habis
+            </button>
+        @else
+            @if($product->stock > 0)
+                <button type="submit" id="add-to-cart-btn" class="w-full bg-dark hover:bg-primary text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-4 px-6 transition-all duration-300 flex items-center justify-center gap-3 group">
+                    <span>Masukkan Keranjang</span>
+                    <i class="fas fa-arrow-right text-[9px] transform group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            @else
+                <button type="button" id="out-of-stock-btn" disabled class="w-full bg-gray-200 text-gray-400 font-bold text-[10px] uppercase tracking-widest py-4 cursor-not-allowed">
+                    Stok Habis
+                </button>
+            @endif
+        @endif
+    </div>
+    <!-- ... bagian sticky mobile juga menyesuaikan ... -->
+</form>
             
             <div class="mt-6 flex items-center gap-2 text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest justify-center lg:justify-start">
                 <i class="fas fa-lock"></i> Transaksi Aman & Terenkripsi
             </div>
-
         </div>
     </div>
 </div>
+
+<!-- Script untuk Update Harga dan Stock secara Real-time -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const variantSelect = document.getElementById('variant-select');
+        const displayPrice = document.getElementById('display-price');
+        const mobileDisplayPrice = document.getElementById('mobile-display-price');
+        const displayUnit = document.getElementById('display-unit');
+        const stockBadge = document.getElementById('stock-badge');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        const outOfStockBtn = document.getElementById('out-of-stock-btn');
+        
+        // Data produk untuk produk satuan
+        const productPrice = {{ $product->price }};
+        const productStock = {{ $product->stock }};
+        const hasVariants = {{ $product->variants && $product->variants->count() > 0 ? 'true' : 'false' }};
+
+        function updateStockBadge(stock) {
+            if (stock <= 0) {
+                stockBadge.textContent = 'Stok Habis';
+                stockBadge.className = 'absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
+                if (addToCartBtn) addToCartBtn.classList.add('hidden');
+                if (outOfStockBtn) outOfStockBtn.classList.remove('hidden');
+            } else if (stock <= 5) {
+                stockBadge.textContent = 'Stok Menipis';
+                stockBadge.className = 'absolute top-4 left-4 bg-red-600 text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
+                if (addToCartBtn) addToCartBtn.classList.remove('hidden');
+                if (outOfStockBtn) outOfStockBtn.classList.add('hidden');
+            } else {
+                stockBadge.textContent = 'Ready Stock';
+                stockBadge.className = 'absolute top-4 left-4 bg-primary text-white text-[8px] md:text-[9px] font-bold px-2 py-1 uppercase tracking-wider z-10';
+                if (addToCartBtn) addToCartBtn.classList.remove('hidden');
+                if (outOfStockBtn) outOfStockBtn.classList.add('hidden');
+            }
+        }
+
+        // Jika produk memiliki varian, handle perubahan select
+        if (hasVariants && variantSelect && variantSelect.tagName === 'SELECT') {
+            variantSelect.addEventListener('change', function() {
+                // Ambil data dari atribut data- di option yang dipilih
+                const selectedOption = this.options[this.selectedIndex];
+                const price = parseInt(selectedOption.getAttribute('data-price'));
+                const unit = selectedOption.getAttribute('data-unit');
+                const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+
+                // Format Rupiah
+                const formattedPrice = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(price).replace('Rp', 'Rp ');
+
+                // Update UI
+                displayPrice.innerText = formattedPrice;
+                if(mobileDisplayPrice) mobileDisplayPrice.innerText = formattedPrice;
+                displayUnit.innerText = '/ ' + unit;
+                
+                // Update Stock Badge dan Tombol
+                updateStockBadge(stock);
+            });
+            
+            // Inisialisasi awal untuk produk dengan varian
+            const initialOption = variantSelect.options[variantSelect.selectedIndex];
+            if (initialOption && initialOption.value) {
+                const initialStock = parseInt(initialOption.getAttribute('data-stock')) || 0;
+                updateStockBadge(initialStock);
+            }
+        } else {
+            // Produk satuan (tanpa varian) - inisialisasi langsung
+            const formattedPrice = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(productPrice).replace('Rp', 'Rp ');
+            
+            displayPrice.innerText = formattedPrice;
+            if(mobileDisplayPrice) mobileDisplayPrice.innerText = formattedPrice;
+            displayUnit.innerText = '/ satuan';
+            updateStockBadge(productStock);
+        }
+    });
+</script>
 @endsection
