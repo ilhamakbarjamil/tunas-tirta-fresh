@@ -14,7 +14,7 @@ class CreateProduct extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Validasi: Pastikan produk punya varian ATAU stok produk diisi
-        $hasVariants = isset($data['variants']) && count($data['variants']) > 0;
+        $hasVariants = isset($data['variants']) && is_array($data['variants']) && count($data['variants']) > 0;
         
         if (!$hasVariants) {
             // Produk satuan: pastikan harga dan stok diisi
@@ -33,14 +33,43 @@ class CreateProduct extends CreateRecord
                 ]);
             }
         } else {
-            // Produk varian: pastikan semua varian valid
+            // Produk varian: pastikan semua varian valid dan lengkap
+            $validVariants = [];
             foreach ($data['variants'] as $index => $variant) {
-                if (empty($variant['name']) || empty($variant['price']) || !isset($variant['stock'])) {
+                // Skip varian yang masih kosong (saat form sedang diisi)
+                if (!isset($variant) || !is_array($variant)) {
+                    continue;
+                }
+                
+                // Validasi varian yang sudah diisi
+                if (isset($variant['name']) && isset($variant['price']) && isset($variant['stock'])) {
+                    if (empty($variant['name']) || empty($variant['price']) || $variant['price'] <= 0) {
+                        throw ValidationException::withMessages([
+                            'variants.' . $index . '.name' => "Varian #" . ($index + 1) . ": Nama dan harga wajib diisi.",
+                        ]);
+                    }
+                    // Set default stock jika kosong
+                    if (!isset($variant['stock']) || $variant['stock'] === '' || $variant['stock'] === null) {
+                        $variant['stock'] = 0;
+                    }
+                    $validVariants[] = $variant;
+                } elseif (!empty($variant['name']) || !empty($variant['price'])) {
+                    // Jika ada sebagian data tapi tidak lengkap
                     throw ValidationException::withMessages([
-                        'variants' => "Varian #" . ($index + 1) . " harus lengkap (nama, harga, stok).",
+                        'variants.' . $index . '.name' => "Varian #" . ($index + 1) . " harus lengkap (nama, harga, stok).",
                     ]);
                 }
             }
+            
+            // Pastikan minimal ada 1 varian yang valid
+            if (count($validVariants) === 0) {
+                throw ValidationException::withMessages([
+                    'variants' => 'Minimal harus ada 1 varian yang lengkap (nama, harga, stok).',
+                ]);
+            }
+            
+            // Update data dengan varian yang valid
+            $data['variants'] = $validVariants;
         }
 
         return $data;

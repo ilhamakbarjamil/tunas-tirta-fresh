@@ -6,17 +6,15 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\ProductVariant; // <--- INI YANG PENTING (Tambahkan ini) 
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // Tambah DB Transaction biar aman
-// 1. GANTI LIBRARY XENDIT JADI MIDTRANS
+use Illuminate\Support\Facades\DB;
 use Midtrans\Config;
 use Midtrans\Snap;
 
 class CartController extends Controller
 {
-    // --- KONFIGURASI MIDTRANS DI CONSTRUCTOR ---
     public function __construct()
     {
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
@@ -41,44 +39,31 @@ class CartController extends Controller
         $variantIdInput = $request->input('variant_id');
         $quantity = $request->input('quantity', 1);
 
-        // Tentukan apakah menggunakan varian atau produk satuan
         $useVariant = !empty($variantIdInput) && $variantIdInput !== 'normal';
-        
+
         if ($useVariant) {
-            // AMBIL STOK DARI TABEL VARIAN
-            $variant = ProductVariant::where('id', $variantIdInput)
-                ->where('product_id', $productId)
-                ->firstOrFail();
-            
+            $variant = ProductVariant::where('id', $variantIdInput)->where('product_id', $productId)->firstOrFail();
             $maxStock = $variant->stock;
             $displayName = $product->name . " (" . $variant->name . ")";
         } else {
-            // AMBIL STOK DARI PRODUK (SATUAN)
             $maxStock = $product->stock;
             $displayName = $product->name;
-            $variantIdInput = null; // Pastikan null untuk produk satuan
+            $variantIdInput = null;
         }
 
-        // VALIDASI STOK
-        if ($maxStock <= 0) {
-            return redirect()->back()->with('error', "❌ Stok untuk $displayName saat ini habis.");
-        }
+        if ($maxStock <= 0)
+            return redirect()->back()->with('error', "❌ Stok $displayName habis.");
+        if ($quantity > $maxStock)
+            return redirect()->back()->with('error', "❌ Stok sisa $maxStock.");
 
-        if ($quantity > $maxStock) {
-            return redirect()->back()->with('error', "❌ Stok tidak cukup. Hanya tersedia $maxStock pcs.");
-        }
-
-        // SIMPAN KE KERANJANG (Logika Upsert: Jika sudah ada, tambah quantity)
         $cart = Cart::where('user_id', auth()->id())
             ->where('product_id', $productId)
             ->where('product_variant_id', $variantIdInput)
             ->first();
 
         if ($cart) {
-            $totalQuantity = $cart->quantity + $quantity;
-            if ($totalQuantity > $maxStock) {
-                return redirect()->back()->with('error', "❌ Gagal! Total di keranjang melebihi stok tersedia.");
-            }
+            if (($cart->quantity + $quantity) > $maxStock)
+                return redirect()->back()->with('error', "❌ Total melebihi stok.");
             $cart->increment('quantity', $quantity);
         } else {
             Cart::create([
@@ -89,231 +74,101 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', "✅ $displayName berhasil masuk keranjang!");
-    }
-
-    public function update(Request $request, $id)
-    {
-        $cart = Cart::where('user_id', Auth::id())->where('id', $id)->first();
-        if ($cart) {
-            $qty = max(1, $request->input('quantity'));
-            
-            // Validasi stock - DARI VARIAN ATAU PRODUK
-            if ($cart->product_variant_id) {
-                // Menggunakan stok varian
-                $maxStock = $cart->variant->stock;
-                $displayName = $cart->product->name . " (" . $cart->variant->name . ")";
-            } else {
-                // Menggunakan stok produk (satuan)
-                $maxStock = $cart->product->stock;
-                $displayName = $cart->product->name;
-            }
-            
-            if ($maxStock <= 0) {
-                return redirect()->back()->with('error', "❌ Stok untuk $displayName saat ini habis.");
-            }
-            
-            if ($qty > $maxStock) {
-                return redirect()->back()->with('error', "❌ Stok tidak cukup. Hanya tersedia $maxStock pcs.");
-            }
-            
-            $cart->update(['quantity' => $qty]);
-        }
-        return redirect()->back();
-    }
-
-    public function destroy($id)
-    {
-        $cart = Cart::where('user_id', Auth::id())->where('id', $id)->first();
-        if ($cart) {
-            $cart->delete();
-        }
-        return redirect()->back()->with('success', 'Produk dihapus dari keranjang');
+        return redirect()->back()->with('success', "✅ $displayName masuk keranjang!");
     }
 
     public function decrease($id)
     {
-        // Cari item keranjang berdasarkan ID
-        $cartItem = \App\Models\Cart::where('id', $id)
-            ->where('user_id', auth()->id()) // Pastikan milik user yang login
-            ->firstOrFail();
-
+        $cartItem = Cart::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         if ($cartItem->quantity > 1) {
-            // Jika jumlah lebih dari 1, kurangi 1
             $cartItem->decrement('quantity');
-            return redirect()->back()->with('success', 'Jumlah produk berhasil dikurangi.');
         } else {
-            // Jika jumlah sudah 1 dan ditekan kurang, biasanya dihapus atau biarkan saja
-            // Pilih salah satu:
-
-            // Opsi A: Hapus item jika dikurangi saat jumlahnya 1
             $cartItem->delete();
-            return redirect()->back()->with('success', 'Produk dihapus dari keranjang.');
-
-            /* 
-            Opsi B: Jangan lakukan apa-apa (tetap 1)
-            return redirect()->back()->with('info', 'Minimal pembelian adalah 1.'); 
-            */
         }
+        return redirect()->back();
     }
 
     public function increase($id)
     {
-        $cartItem = \App\Models\Cart::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-
-        // Cek stok - DARI VARIAN ATAU PRODUK
-        if ($cartItem->product_variant_id) {
-            // Menggunakan stok varian
-            $maxStock = $cartItem->variant->stock;
-        } else {
-            // Menggunakan stok produk (satuan)
-            $maxStock = $cartItem->product->stock;
-        }
+        $cartItem = Cart::where('id', $id)->where('user_id', Auth::id())->with(['product', 'variant'])->firstOrFail();
+        $maxStock = $cartItem->product_variant_id ? $cartItem->variant->stock : $cartItem->product->stock;
 
         if ($cartItem->quantity < $maxStock) {
             $cartItem->increment('quantity');
             return redirect()->back();
         }
-
-        return redirect()->back()->with('error', 'Stok sudah maksimal.');
+        return redirect()->back()->with('error', 'Stok maksimal.');
     }
 
-    // --- 2. FUNGSI CHECKOUT (UBAHAN TOTAL MIDTRANS) ---
+    public function destroy($id)
+    {
+        Cart::where('user_id', Auth::id())->where('id', $id)->delete();
+        return redirect()->back()->with('success', 'Produk dihapus.');
+    }
+
     public function checkout(Request $request)
     {
-        // Validasi
-        $request->validate([
-            'address' => 'required|string|max:500',
-            'note' => 'nullable|string|max:200',
-        ]);
-
+        $request->validate(['address' => 'required|string|max:500']);
         $user = Auth::user();
-        $carts = Cart::where('user_id', $user->id)->get();
+        $carts = Cart::where('user_id', $user->id)->with(['product', 'variant'])->get();
 
-        if ($carts->isEmpty()) {
+        if ($carts->isEmpty())
             return redirect()->back()->with('error', 'Keranjang kosong!');
-        }
 
-        // Validasi Stock sebelum checkout - DARI VARIAN ATAU PRODUK
-        foreach ($carts as $cart) {
-            if ($cart->product_variant_id) {
-                // Validasi stok varian
-                $variant = ProductVariant::find($cart->product_variant_id);
-                if (!$variant || $variant->stock < $cart->quantity) {
-                    $displayName = $cart->product->name . " (" . ($variant ? $variant->name : 'Varian') . ")";
-                    $availableStock = $variant ? $variant->stock : 0;
-                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: $availableStock pcs, dibutuhkan: {$cart->quantity} pcs.");
-                }
-            } else {
-                // Validasi stok produk (satuan)
-                if ($cart->product->stock < $cart->quantity) {
-                    $displayName = $cart->product->name;
-                    return redirect()->back()->with('error', "❌ Stok tidak cukup untuk $displayName. Tersedia: {$cart->product->stock} pcs, dibutuhkan: {$cart->quantity} pcs.");
-                }
-            }
-        }
-
-        // Hitung Total - DARI VARIAN ATAU PRODUK
         $totalOrder = 0;
         foreach ($carts as $cart) {
-            if ($cart->product_variant_id && $cart->variant) {
-                // Menggunakan harga varian
-                $totalOrder += $cart->variant->price * $cart->quantity;
-            } else {
-                // Menggunakan harga produk (satuan)
-                $totalOrder += $cart->product->price * $cart->quantity;
-            }
+            $price = $cart->product_variant_id ? $cart->variant->price : $cart->product->price;
+            $totalOrder += $price * $cart->quantity;
         }
 
-        // --- MULAI TRANSAKSI DATABASE ---
         DB::beginTransaction();
         try {
-            // A. Buat Order Dulu (Status: Pending)
-            // Kita butuh ID Order untuk dikirim ke Midtrans
             $order = Order::create([
                 'user_id' => $user->id,
                 'status' => 'pending',
                 'total_price' => $totalOrder,
-                'external_id' => 'ORD-' . time(), // ID Unik
+                'external_id' => 'ORD-' . time(),
                 'address' => $request->address,
                 'note' => $request->note,
-                'shipping_courier' => 'Menyesuaikan', // Bisa diupdate nanti
-                // 'snap_token' => null, // Nanti diisi di bawah
             ]);
 
-            // B. Pindahkan Item ke OrderItem - DARI VARIAN ATAU PRODUK
             foreach ($carts as $cart) {
-                if ($cart->product_variant_id && $cart->variant) {
-                    // Menggunakan harga varian
-                    $price = $cart->variant->price;
-                } else {
-                    // Menggunakan harga produk (satuan)
-                    $price = $cart->product->price;
-                }
-
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $cart->product_id,
-                    'product_variant_id' => $cart->product_variant_id, // Bisa null untuk produk satuan
+                    'product_variant_id' => $cart->product_variant_id,
                     'quantity' => $cart->quantity,
-                    'price' => $price,
+                    'price' => $cart->product_variant_id ? $cart->variant->price : $cart->product->price,
                 ]);
             }
 
-            // C. Siapkan Parameter Midtrans SNAP
+            // --- CONFIGURASI SNAP ---
             $params = [
                 'transaction_details' => [
-                    'order_id' => $order->external_id, // Gunakan ID dari Database
-                    'gross_amount' => (int) $totalOrder, // Wajib Integer
+                    'order_id' => $order->external_id,
+                    'gross_amount' => (int) $totalOrder
                 ],
                 'customer_details' => [
                     'first_name' => $user->name,
                     'email' => $user->email,
-                    // 'phone' => $user->phone, // Tambahkan jika ada
                 ],
-                'item_details' => [
-                    [
-                        'id' => 'TOTAL',
-                        'price' => (int) $totalOrder,
-                        'quantity' => 1,
-                        'name' => 'Total Pembelian Buah'
-                    ]
-                ]
             ];
 
-            if (env('APP_ENV') === 'local') {
-                \Midtrans\Config::$curlOptions = [
-                    CURLOPT_SSL_VERIFYPEER => false, // Matikan SSL biar CURL lancar di laptop
-                    CURLOPT_SSL_VERIFYHOST => 0,
-                    CURLOPT_CONNECTTIMEOUT => 30,
-                    CURLOPT_HTTPHEADER => [],
-                ];
-            }
-
-            // D. Minta Snap Token ke Midtrans
+            // Minta Token dari Midtrans
             $snapToken = Snap::getSnapToken($params);
 
-            // Simpan Token ke Order (Opsional, tapi bagus buat log)
-            // Pastikan di database tabel orders ada kolom 'snap_token' atau 'payment_url'
-            // Kalau tidak ada kolom snap_token, pakai kolom payment_url saja sementara
-            $order->payment_url = $snapToken;
-            $order->snap_token = $snapToken;
-            $order->save();
+            // Update order dengan token
+            $order->update(['snap_token' => $snapToken]);
 
-            // E. Hapus Keranjang
             Cart::where('user_id', $user->id)->delete();
-
             DB::commit();
 
-            // F. LEMPAR KE HALAMAN PEMBAYARAN (VIEW BARU)
-            // Kita bawa variabel $snapToken dan $order ke view
             return view('checkout.payment', compact('snapToken', 'order'));
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal memproses: ' . $e->getMessage());
+            // Kembalikan pesan error yang lebih jelas jika gagal
+            return redirect()->back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
         }
     }
 }
