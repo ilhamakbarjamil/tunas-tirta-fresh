@@ -30,8 +30,8 @@ class OrderController extends Controller
         foreach ($orders as $order) {
             if ($order->status == 'pending' && $order->external_id) {
                 try {
-                    $status = Transaction::status($order->external_id); 
-                    
+                    $status = Transaction::status($order->external_id);
+
                     $newStatus = null;
                     if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
                         $newStatus = 'paid';
@@ -50,7 +50,7 @@ class OrderController extends Controller
                     }
 
                 } catch (\Exception $e) {
-                    continue; 
+                    continue;
                 }
             }
         }
@@ -77,12 +77,12 @@ class OrderController extends Controller
     {
         $token = env('FONNTE_TOKEN');
         $adminPhone = env('WHATSAPP_ADMIN');
-        
+
         // Buat Link Invoice
         $invoiceLink = route('orders.show', $order->id);
 
         // Pesan untuk Admin
-        $message  = "*LAPORAN ORDER LUNAS!* ✅\n\n";
+        $message = "*LAPORAN ORDER LUNAS!* ✅\n\n";
         $message .= "No Order: #{$order->external_id}\n";
         $message .= "Pembeli: " . Auth::user()->name . "\n";
         $message .= "Total: Rp " . number_format($order->total_price, 0, ',', '.') . "\n\n";
@@ -99,5 +99,15 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             // Error diam-diam saja biar user tidak terganggu
         }
+    }
+
+    public function publicInvoice($external_id)
+    {
+        // Cari order berdasarkan external_id
+        $order = \App\Models\Order::with('items.product')
+            ->where('external_id', $external_id)
+            ->firstOrFail();
+
+        return view('orders.public_invoice', compact('order'));
     }
 }

@@ -45,3 +45,5 @@ Route::get('/login-admin', function () {
     return redirect('/admin/login');
 });
 
+Route::get('/invoice/public/{external_id}', [App\Http\Controllers\OrderController::class, 'publicInvoice'])
+    ->name('invoice.public');
