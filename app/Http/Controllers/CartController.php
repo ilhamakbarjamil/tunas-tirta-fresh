@@ -74,127 +74,65 @@ class CartController extends Controller
         }
         return redirect()->back()->with('show_cart', true);
     }
+    
 
     // --- FITUR UTAMA: CHECKOUT VIA WHATSAPP ---
     public function checkout(Request $request)
     {
-        // 1. Validasi: User wajib isi alamat
+        // 1. Validasi tetap sama
         $request->validate([
-            'phone'   => 'required|numeric',
-            'address' => 'required|string|max:500',
-            'note' => 'nullable|string|max:200',
+            'phone' => 'required',
+            'address' => 'required',
         ]);
 
         $user = Auth::user();
-
-        // 2. Cek Keranjang
-        // (Pastikan Mas punya relasi 'carts' di model User, atau sesuaikan query ini)
-        $carts = \App\Models\Cart::where('user_id', $user->id)->get();
+        $carts = Cart::where('user_id', $user->id)->with('product')->get();
 
         if ($carts->isEmpty()) {
-            return redirect()->back()->with('error', 'Keranjang kosong, mau beli angin?');
+            return redirect()->back()->with('error', 'Keranjang kosong.');
         }
+
+        // 2. Hitung Total
+        $totalPrice = $carts->sum(function ($cart) {
+            return $cart->product->price * $cart->quantity;
+        });
+
+        // 3. Simpan ke Database Order (Status langsung 'pending' atau 'waiting')
+        $order = Order::create([
+            'user_id' => $user->id,
+            'external_id' => 'TRX-' . time(), // Bikin ID unik
+            'total_price' => $totalPrice,
+            'status' => 'pending',
+            'address' => $request->address,
+            'phone' => $request->phone,
+            'note' => $request->note,
+        ]);
+
+        // 4. Masukkan Item Keranjang ke OrderItems
+        $pesananText = "Halo Admin Tunas Tirta Fresh! 👋\n";
+        $pesananText .= "Saya ingin memesan produk berikut:\n\n";
 
         foreach ($carts as $cart) {
-            if (!$cart->product->is_available) {
-                // KICK USER BALIK KE KERANJANG
-                return redirect()->route('cart.index')->with('error', 
-                    'Maaf, produk "' . $cart->product->name . '" baru saja habis/tidak tersedia!'
-                );
-            }
-        }
-
-        // 3. Mulai Transaksi Database (Biar aman)
-        DB::beginTransaction();
-        try {
-            // Hitung Total
-            $totalOrder = 0;
-            foreach ($carts as $cart) {
-                // Logika harga: Cek apakah produk punya varian harga atau harga normal
-                $price = $cart->variant ? $cart->variant->price : $cart->product->price;
-                $totalOrder += $price * $cart->quantity;
-            }
-
-            // A. Buat Order Baru
-            // PENTING: Kita bikin external_id unik (ORD-Jam-Acak) biar Midtrans gak error "Duplicate Order"
-            $externalId = 'ORD-' . time() . '-' . rand(100, 999);
-
-            $order = \App\Models\Order::create([
-                'user_id' => $user->id,
-                'phone'   => $request->phone,
-                'status' => 'pending',
-                'total_price' => $totalOrder,
-                'external_id' => $externalId, // Ini kolom baru yang tadi kita cek
-                'address' => $request->address,
-                'note' => $request->note,
-                'payment_url' => null,
-                'snap_token' => null,
+            $order->items()->create([
+                'product_id' => $cart->product_id,
+                'quantity' => $cart->quantity,
+                'price' => $cart->product->price,
             ]);
 
-            // B. Pindahkan Barang dari Cart ke OrderItem
-            foreach ($carts as $cart) {
-                $price = $cart->variant ? $cart->variant->price : $cart->product->price;
-
-                \App\Models\OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $cart->product_id,
-                    'product_variant_id' => $cart->product_variant_id ?? null, // Pakai null coalescing kalau kolom beda
-                    'quantity' => $cart->quantity,
-                    'price' => $price,
-                ]);
-            }
-
-            // 4. SETTING MIDTRANS & MINTA TOKEN 
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $externalId, // Pakai ID Unik tadi
-                    'gross_amount' => (int) $totalOrder,
-                ],
-                'customer_details' => [
-                    'first_name' => $user->name,
-                    'email' => $user->email,
-                ],
-                // Opsional: Detail Item biar tampil di email Midtrans
-                'item_details' => [
-                    [
-                        'id' => 'TOTAL',
-                        'price' => (int) $totalOrder,
-                        'quantity' => 1,
-                        'name' => 'Total Belanja di Tunas Tirta'
-                    ]
-                ]
-            ];
-
-            // --- JURUS ANTI ERROR CURL (Localhost Only) ---
-            if (env('APP_ENV') === 'local') {
-                \Midtrans\Config::$curlOptions = [
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_SSL_VERIFYHOST => 0,
-                    CURLOPT_CONNECTTIMEOUT => 30,
-                    CURLOPT_HTTPHEADER => [], // <--- INI BARIS YANG HILANG (WAJIB ADA)
-                ];
-            }
-            // ----------------------------------------------
-
-            // Minta Token ke Server Midtrans
-            $snapToken = Snap::getSnapToken($params);
-
-            // Simpan Token ke Database kita
-            $order->snap_token = $snapToken;
-            $order->save();
-
-            // 5. Kosongkan Keranjang
-            \App\Models\Cart::where('user_id', $user->id)->delete();
-
-            DB::commit(); // Simpan permanen
-
-            // 6. Tampilkan Halaman Pembayaran (View Baru)
-            // Kita belum buat view ini, nanti habis ini kita buat.
-            return view('checkout.payment', compact('snapToken', 'order'));
-
-        } catch (\Exception $e) {
-            DB::rollBack(); // Batalkan semua kalau ada error
-            return redirect()->back()->with('error', 'Gagal memproses order: ' . $e->getMessage());
+            $pesananText .= "- " . $cart->product->name . " (x" . $cart->quantity . ")\n";
         }
+
+        $pesananText .= "\n💰 *Total Bayar: Rp " . number_format($totalPrice, 0, ',', '.') . "*\n";
+        $pesananText .= "📍 *Alamat:* " . $request->address . "\n";
+        $pesananText .= "📄 *Invoice:* " . route('invoice.public', $order->external_id);
+
+        // 5. Hapus Keranjang
+        Cart::where('user_id', $user->id)->delete();
+
+        // 6. REDIRECT KE WHATSAPP
+        $adminWA = env('WHATSAPP_ADMIN', '628xxxxxxx'); // Ambil dari .env
+        $waUrl = "https://api.whatsapp.com/send?phone=" . $adminWA . "&text=" . urlencode($pesananText);
+
+        return redirect()->away($waUrl);
     }
 }
