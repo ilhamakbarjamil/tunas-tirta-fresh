@@ -186,6 +186,8 @@ class OrderResource extends Resource
                         $message .= "Halo kak {$record->user->name},\n";
                         $message .= "Pesanan #{$record->external_id} sudah kami kirim.\n\n";
                         $message .= "📦 *No. Resi:* {$data['resi']}\n\n";
+                        $linkInvoice = route('invoice.public', $record->external_id); // Pake route yang baru
+                        $message .= "📄 *Lihat Invoice:* \n$linkInvoice\n\n";
                         $message .= "Alamat: {$record->address}\n\n";
                         $message .= "Terima kasih sudah belanja di Tunas Tirta Fresh! 🍎";
 
